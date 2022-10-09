@@ -36,4 +36,4 @@ else()
 endif()
 
 add_subdirectory(third_party)
-add_subdirectory(substrait)
+add_subdirectory(src)
