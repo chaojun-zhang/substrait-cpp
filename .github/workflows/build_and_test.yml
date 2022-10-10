@@ -12,12 +12,8 @@
 name: build and test
 
 on:
-  push:
-    branches: 
-      - WW*
   pull_request:
-    branches: 
-      - developer
+    branches:
       - main
 
 jobs:

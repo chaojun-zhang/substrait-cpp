@@ -13,12 +13,8 @@
 name: check
 
 on:
-  push:
-    branches:
-      - WW*
   pull_request:
     branches:
-      - developer
       - main
 
 
