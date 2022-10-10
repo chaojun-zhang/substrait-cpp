@@ -1,2 +1,2 @@
-*/ThirdParty/*
-*src/substrait/proto/*
+*/third_party/*
+*src/proto/*
