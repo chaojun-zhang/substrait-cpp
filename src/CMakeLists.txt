@@ -53,7 +53,7 @@ add_library(substrait-cpp ${SRCS})
 target_include_directories(substrait-cpp
         PUBLIC ${PROTO_OUTPUT_DIR})
 target_link_libraries(substrait-cpp yaml-cpp)
-#
+
 #if (${BUILD_TESTING})
-#    add_subdirectory(tests)
+    add_subdirectory(tests)
 #endif ()

@@ -25,7 +25,7 @@ static bool decodeFunctionVariant(
     SubstraitFunctionVariant& function) {
   auto& returnType = node["return"];
   if (returnType && returnType.IsScalar()) {
-    /// return type can be an expression
+    /// Return type can be an expression.
     const auto& returnExpr = returnType.as<std::string>();
     std::stringstream ss(returnExpr);
 
@@ -159,7 +159,7 @@ namespace {
 std::string getSubstraitExtensionAbsolutePath() {
   const std::string absolute_path = __FILE__;
   auto const pos = absolute_path.find_last_of('/');
-  return absolute_path.substr(0, pos) + "/extensions/";
+  return absolute_path.substr(0, pos) + "/../third_party/substrait/extensions/";
 }
 
 } // namespace

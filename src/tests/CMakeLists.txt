@@ -11,19 +11,18 @@
 # limitations under the License.
 
 add_executable(
-  substrait_test)
+    substrait_cpp_test
+    SubstraitExtensionTest.cpp
+    SubstraitTypeTest.cpp)
 
-
-add_dependencies(substrait_test substrait_cpp)
 
 add_test(
-  NAME substrait_test
-  COMMAND substrait_test
-  WORKING_DIRECTORY .)
+    NAME substrait_cpp_test
+    COMMAND substrait_cpp_test
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(
-        substrait_test
-  gtest
-  gtest_main
-  ${FOLLY_WITH_DEPENDENCIES}
-  ${FILESYSTEM})
+    substrait_cpp_test
+    substrait-cpp
+    gtest
+    gtest_main)

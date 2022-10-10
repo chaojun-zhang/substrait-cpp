@@ -80,6 +80,4 @@ function install_build_prerequisites {
   fi
 )
 
-echo "All deps for Velox installed! Now try \"make\""
-echo 'To add cmake-format bin to your $PATH, consider adding this to your ~/.profile:'
-echo 'export PATH=$HOME/bin:$HOME/Library/Python/3.7/bin:$PATH'
+echo "All deps installed! Now try \"make\""
