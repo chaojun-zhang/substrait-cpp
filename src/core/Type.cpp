@@ -13,13 +13,16 @@
  */
 
 #include "Type.h"
+#include <sstream>
 #include <stdexcept>
+#include "../common/Exceptions.h"
+#include "../proto/substrait/type.pb.h"
 
 namespace io::substrait {
 
 namespace {
 
-size_t findNextComma(const std::string &str, size_t start) {
+size_t findNextComma(const std::string& str, size_t start) {
   int cnt = 0;
   for (auto i = start; i < str.size(); i++) {
     if (str[i] == '<') {
@@ -36,19 +39,22 @@ size_t findNextComma(const std::string &str, size_t start) {
 
 } // namespace
 
-TypePtr Type::decode(const std::string &rawType) {
+TypePtr Type::decode(const std::string& rawType) {
   std::string matchingType = rawType;
-  const auto &questionMaskPos = rawType.find_last_of('?');
+  const auto& questionMaskPos = rawType.find_last_of('?');
   // deal with type and with a question mask like "i32?".
   if (questionMaskPos != std::string::npos) {
     matchingType = rawType.substr(0, questionMaskPos);
   }
-  std::transform(matchingType.begin(), matchingType.end(), matchingType.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
+  std::transform(
+      matchingType.begin(),
+      matchingType.end(),
+      matchingType.begin(),
+      [](unsigned char c) { return std::tolower(c); });
 
-  const auto &leftAngleBracketPos = rawType.find('<');
+  const auto& leftAngleBracketPos = rawType.find('<');
   if (leftAngleBracketPos == std::string::npos) {
-    const auto &scalarType = scalarTypeMapping().find(matchingType);
+    const auto& scalarType = scalarTypeMapping().find(matchingType);
     if (scalarType != scalarTypeMapping().end()) {
       return scalarType->second;
     } else if (matchingType.rfind("unknown", 0) == 0) {
@@ -57,12 +63,11 @@ TypePtr Type::decode(const std::string &rawType) {
       return std::make_shared<const StringLiteralType>(rawType);
     }
   }
-  const auto &rightAngleBracketPos = rawType.rfind('>');
+  const auto& rightAngleBracketPos = rawType.rfind('>');
 
   auto baseType = matchingType.substr(0, leftAngleBracketPos);
 
   std::vector<TypePtr> nestedTypes;
-  nestedTypes.reserve(8);
   auto prevPos = leftAngleBracketPos + 1;
   auto commaPos = findNextComma(rawType, prevPos);
   while (commaPos != std::string::npos) {
@@ -99,32 +104,40 @@ TypePtr Type::decode(const std::string &rawType) {
   } else if (TypeTraits<TypeKind::kStruct>::typeString == baseType) {
     return std::make_shared<StructType>(nestedTypes);
   } else {
-    throw std::runtime_error("Unsupported substrait type: " + rawType);
+    SUBSTRAIT_UNSUPPORTED("Unsupported substrait type: " + rawType);
   }
 }
 
-#define SCALAR_TYPE_MAPPING(typeKind)                                          \
-  {                                                                            \
-    TypeTraits<TypeKind::typeKind>::typeString,                                \
-        std::make_shared<TypeBase<TypeKind::typeKind>>(                        \
-            TypeBase<TypeKind::typeKind>())                                    \
+#define SCALAR_TYPE_MAPPING(typeKind)                   \
+  {                                                     \
+    TypeTraits<TypeKind::typeKind>::typeString,         \
+        std::make_shared<TypeBase<TypeKind::typeKind>>( \
+            TypeBase<TypeKind::typeKind>())             \
   }
 
-const std::unordered_map<std::string, TypePtr> &Type::scalarTypeMapping() {
+const std::unordered_map<std::string, TypePtr>& Type::scalarTypeMapping() {
   static const std::unordered_map<std::string, TypePtr> scalarTypeMap{
-      SCALAR_TYPE_MAPPING(kBool),         SCALAR_TYPE_MAPPING(kI8),
-      SCALAR_TYPE_MAPPING(kI16),          SCALAR_TYPE_MAPPING(kI32),
-      SCALAR_TYPE_MAPPING(kI64),          SCALAR_TYPE_MAPPING(kFp32),
-      SCALAR_TYPE_MAPPING(kFp64),         SCALAR_TYPE_MAPPING(kString),
-      SCALAR_TYPE_MAPPING(kBinary),       SCALAR_TYPE_MAPPING(kTimestamp),
-      SCALAR_TYPE_MAPPING(kTimestampTz),  SCALAR_TYPE_MAPPING(kDate),
-      SCALAR_TYPE_MAPPING(kTime),         SCALAR_TYPE_MAPPING(kIntervalDay),
-      SCALAR_TYPE_MAPPING(kIntervalYear), SCALAR_TYPE_MAPPING(kUuid),
+      SCALAR_TYPE_MAPPING(kBool),
+      SCALAR_TYPE_MAPPING(kI8),
+      SCALAR_TYPE_MAPPING(kI16),
+      SCALAR_TYPE_MAPPING(kI32),
+      SCALAR_TYPE_MAPPING(kI64),
+      SCALAR_TYPE_MAPPING(kFp32),
+      SCALAR_TYPE_MAPPING(kFp64),
+      SCALAR_TYPE_MAPPING(kString),
+      SCALAR_TYPE_MAPPING(kBinary),
+      SCALAR_TYPE_MAPPING(kTimestamp),
+      SCALAR_TYPE_MAPPING(kTimestampTz),
+      SCALAR_TYPE_MAPPING(kDate),
+      SCALAR_TYPE_MAPPING(kTime),
+      SCALAR_TYPE_MAPPING(kIntervalDay),
+      SCALAR_TYPE_MAPPING(kIntervalYear),
+      SCALAR_TYPE_MAPPING(kUuid),
   };
   return scalarTypeMap;
 }
 
-const std::string FixedBinaryType::signature() const {
+std::string FixedBinaryType::signature() const {
   std::stringstream sign;
   sign << TypeBase::signature();
   sign << "<";
@@ -133,15 +146,15 @@ const std::string FixedBinaryType::signature() const {
   return sign.str();
 }
 
-bool FixedBinaryType::isSameAs(const std::shared_ptr<const Type> &other) const {
-  if (const auto &type =
+bool FixedBinaryType::isSameAs(const std::shared_ptr<const Type>& other) const {
+  if (const auto& type =
           std::dynamic_pointer_cast<const FixedBinaryType>(other)) {
     return true;
   }
   return false;
 }
 
-const std::string DecimalType::signature() const {
+std::string DecimalType::signature() const {
   std::stringstream signature;
   signature << TypeBase::signature();
   signature << "<";
@@ -150,14 +163,14 @@ const std::string DecimalType::signature() const {
   return signature.str();
 }
 
-bool DecimalType::isSameAs(const std::shared_ptr<const Type> &other) const {
-  if (const auto &type = std::dynamic_pointer_cast<const DecimalType>(other)) {
+bool DecimalType::isSameAs(const std::shared_ptr<const Type>& other) const {
+  if (const auto& type = std::dynamic_pointer_cast<const DecimalType>(other)) {
     return true;
   }
   return false;
 }
 
-const std::string FixedCharType::signature() const {
+std::string FixedCharType::signature() const {
   std::ostringstream sign;
   sign << TypeBase::signature();
   sign << "<";
@@ -166,15 +179,15 @@ const std::string FixedCharType::signature() const {
   return sign.str();
 }
 
-bool FixedCharType::isSameAs(const std::shared_ptr<const Type> &other) const {
-  if (const auto &type =
+bool FixedCharType::isSameAs(const std::shared_ptr<const Type>& other) const {
+  if (const auto& type =
           std::dynamic_pointer_cast<const FixedCharType>(other)) {
     return true;
   }
   return false;
 }
 
-const std::string VarcharType::signature() const {
+std::string VarcharType::signature() const {
   std::ostringstream sign;
   sign << TypeBase::signature();
   sign << "<";
@@ -183,19 +196,19 @@ const std::string VarcharType::signature() const {
   return sign.str();
 }
 
-bool VarcharType::isSameAs(const std::shared_ptr<const Type> &other) const {
-  if (const auto &type = std::dynamic_pointer_cast<const VarcharType>(other)) {
+bool VarcharType::isSameAs(const std::shared_ptr<const Type>& other) const {
+  if (const auto& type = std::dynamic_pointer_cast<const VarcharType>(other)) {
     return true;
   }
   return false;
 }
 
-const std::string StructType::signature() const {
+std::string StructType::signature() const {
   std::ostringstream signature;
   signature << TypeBase::signature();
   signature << "<";
   for (auto it = children_.begin(); it != children_.end(); ++it) {
-    const auto &typeSign = (*it)->signature();
+    const auto& typeSign = (*it)->signature();
     if (it == children_.end() - 1) {
       signature << typeSign;
     } else {
@@ -206,8 +219,8 @@ const std::string StructType::signature() const {
   return signature.str();
 }
 
-bool StructType::isSameAs(const std::shared_ptr<const Type> &other) const {
-  if (const auto &type = std::dynamic_pointer_cast<const StructType>(other)) {
+bool StructType::isSameAs(const std::shared_ptr<const Type>& other) const {
+  if (const auto& type = std::dynamic_pointer_cast<const StructType>(other)) {
     bool sameSize = type->children_.size() == children_.size();
     if (sameSize) {
       for (int i = 0; i < children_.size(); i++) {
@@ -221,7 +234,7 @@ bool StructType::isSameAs(const std::shared_ptr<const Type> &other) const {
   return false;
 }
 
-const std::string MapType::signature() const {
+std::string MapType::signature() const {
   std::ostringstream signature;
   signature << TypeBase::signature();
   signature << "<";
@@ -232,15 +245,15 @@ const std::string MapType::signature() const {
   return signature.str();
 }
 
-bool MapType::isSameAs(const std::shared_ptr<const Type> &other) const {
-  if (const auto &type = std::dynamic_pointer_cast<const MapType>(other)) {
+bool MapType::isSameAs(const std::shared_ptr<const Type>& other) const {
+  if (const auto& type = std::dynamic_pointer_cast<const MapType>(other)) {
     return keyType_->isSameAs(type->keyType_) &&
-           valueType_->isSameAs(type->valueType_);
+        valueType_->isSameAs(type->valueType_);
   }
   return false;
 }
 
-const std::string ListType::signature() const {
+std::string ListType::signature() const {
   std::ostringstream signature;
   signature << TypeBase::signature();
   signature << "<";
@@ -249,15 +262,15 @@ const std::string ListType::signature() const {
   return signature.str();
 }
 
-bool ListType::isSameAs(const std::shared_ptr<const Type> &other) const {
-  if (const auto &type = std::dynamic_pointer_cast<const ListType>(other)) {
+bool ListType::isSameAs(const std::shared_ptr<const Type>& other) const {
+  if (const auto& type = std::dynamic_pointer_cast<const ListType>(other)) {
     return elementType_->isSameAs(type->elementType_);
   }
   return false;
 }
 
-bool UsedDefinedType::isSameAs(const std::shared_ptr<const Type> &other) const {
-  if (const auto &type =
+bool UsedDefinedType::isSameAs(const std::shared_ptr<const Type>& other) const {
+  if (const auto& type =
           std::dynamic_pointer_cast<const UsedDefinedType>(other)) {
     return type->value_ == value_;
   }
@@ -265,37 +278,52 @@ bool UsedDefinedType::isSameAs(const std::shared_ptr<const Type> &other) const {
 }
 
 bool StringLiteralType::isSameAs(
-    const std::shared_ptr<const Type> &other) const {
+    const std::shared_ptr<const Type>& other) const {
   if (isWildcard()) {
     return true;
   }
-  if (const auto &type =
+  if (const auto& type =
           std::dynamic_pointer_cast<const StringLiteralType>(other)) {
     return type->value_ == value_;
   }
   return false;
 }
 
-#define DEFINE_SCALAR_ACCESSOR(typeKind)                                       \
-  std::shared_ptr<const ScalarType<TypeKind::typeKind>> typeKind() {           \
-    return std::make_shared<const ScalarType<TypeKind::typeKind>>();           \
+#define DEFINE_SCALAR_ACCESSOR(typeKind)                             \
+  std::shared_ptr<const ScalarType<TypeKind::typeKind>> typeKind() { \
+    return std::make_shared<const ScalarType<TypeKind::typeKind>>(); \
   }
 
 DEFINE_SCALAR_ACCESSOR(kBool);
+
 DEFINE_SCALAR_ACCESSOR(kI8);
+
 DEFINE_SCALAR_ACCESSOR(kI16);
+
 DEFINE_SCALAR_ACCESSOR(kI32);
+
 DEFINE_SCALAR_ACCESSOR(kI64);
+
 DEFINE_SCALAR_ACCESSOR(kFp32);
+
 DEFINE_SCALAR_ACCESSOR(kFp64);
+
 DEFINE_SCALAR_ACCESSOR(kString);
+
 DEFINE_SCALAR_ACCESSOR(kBinary);
+
 DEFINE_SCALAR_ACCESSOR(kTimestamp);
+
 DEFINE_SCALAR_ACCESSOR(kDate);
+
 DEFINE_SCALAR_ACCESSOR(kTime);
+
 DEFINE_SCALAR_ACCESSOR(kIntervalYear);
+
 DEFINE_SCALAR_ACCESSOR(kIntervalDay);
+
 DEFINE_SCALAR_ACCESSOR(kTimestampTz);
+
 DEFINE_SCALAR_ACCESSOR(kUuid);
 
 #undef DEFINE_SCALAR_ACCESSOR

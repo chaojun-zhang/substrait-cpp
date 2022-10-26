@@ -18,11 +18,9 @@ SCRIPTDIR=$(dirname "${BASH_SOURCE[0]}")
 source $SCRIPTDIR/setup-helper-functions.sh
 
 CPU_TARGET="${CPU_TARGET:-avx}"
-NPROC=$(getconf _NPROCESSORS_ONLN)
-COMPILER_FLAGS=$(get_cxx_flags $CPU_TARGET)
 
 DEPENDENCY_DIR=${DEPENDENCY_DIR:-$(pwd)}
-MACOS_DEPS="ninja bison cmake ccache gflags protobuf"
+MACOS_DEPS="ninja cmake ccache protobuf"
 
 function run_and_time {
   time "$@"
@@ -56,7 +54,7 @@ function install_build_prerequisites {
       pkg=${BASH_REMATCH[1]}
       ver=${BASH_REMATCH[2]}
       echo "Installing '${pkg}' at '${ver}'"
-      tap="velox/local-${pkg}"
+      tap="substrait-cpp/local-${pkg}"
       brew tap-new "${tap}"
       brew extract "--version=${ver}" "${pkg}" "${tap}"
       brew install "${tap}/${pkg}@${ver}"
@@ -64,8 +62,6 @@ function install_build_prerequisites {
       brew install --formula "${pkg}" && echo "Installation of ${pkg} is successful" || brew upgrade --formula "$pkg"
     fi
   done
-
-  pip3 install --user cmake-format regex
 }
 
 function install_deps {

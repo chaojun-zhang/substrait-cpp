@@ -11,18 +11,16 @@
 # limitations under the License.
 
 add_executable(
-    substrait_cpp_test
-    TypeTest.cpp
-    FunctionLookupTest.cpp)
-
+        substrait_core_test
+        TypeTest.cpp
+        FunctionLookupTest.cpp)
 
 add_test(
-    NAME substrait_cpp_test
-    COMMAND substrait_cpp_test
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+        substrait_core_test
+        substrait_core_test)
 
 target_link_libraries(
-    substrait_cpp_test
-    substrait-cpp
-    gtest
-    gtest_main)
+        substrait_core_test
+        substrait-core
+        gtest
+        gtest_main)

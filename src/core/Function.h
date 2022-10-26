@@ -16,47 +16,67 @@
 
 #include "FunctionSignature.h"
 #include "Type.h"
-#include <iostream>
 
 namespace io::substrait {
 
 struct FunctionArgument {
-  virtual const bool isRequired() const = 0;
+  virtual bool isRequired() const = 0;
+
   /// Convert argument type to short type string based on
   /// https://substrait.io/extensions/#function-signature-compound-names
-  virtual const std::string toTypeString() const = 0;
+  virtual std::string toTypeString() const = 0;
 
-  virtual const bool isWildcardType() const { return false; };
+  virtual bool isWildcardType() const {
+    return false;
+  };
 
-  virtual const bool isValueArgument() const { return false; }
+  virtual bool isValueArgument() const {
+    return false;
+  }
 };
 
 using FunctionArgumentPtr = std::shared_ptr<FunctionArgument>;
 
 struct EnumArgument : public FunctionArgument {
   bool required;
-  bool const isRequired() const override { return required; }
 
-  const std::string toTypeString() const override {
+  bool isRequired() const override {
+    return required;
+  }
+
+  std::string toTypeString() const override {
     return required ? "req" : "opt";
   }
 };
 
 struct TypeArgument : public FunctionArgument {
-  const std::string toTypeString() const override { return "type"; }
-  const bool isRequired() const override { return true; }
+  std::string toTypeString() const override {
+    return "type";
+  }
+
+  bool isRequired() const override {
+    return true;
+  }
 };
 
 struct ValueArgument : public FunctionArgument {
   TypePtr type;
 
-  const std::string toTypeString() const override { return type->signature(); }
+  std::string toTypeString() const override {
+    return type->signature();
+  }
 
-  const bool isRequired() const override { return true; }
+  bool isRequired() const override {
+    return true;
+  }
 
-  const bool isWildcardType() const override { return type->isWildcard(); }
+  bool isWildcardType() const override {
+    return type->isWildcard();
+  }
 
-  const bool isValueArgument() const override { return true; }
+  bool isValueArgument() const override {
+    return true;
+  }
 };
 
 struct FunctionVariadic {
@@ -75,12 +95,14 @@ struct FunctionVariant {
   virtual bool tryMatch(const FunctionSignature& signature);
 
   /// Create function signature by given function name and arguments.
-  static std::string
-  signature(const std::string &name,
-            const std::vector<FunctionArgumentPtr> &arguments);
+  static std::string signature(
+      const std::string& name,
+      const std::vector<FunctionArgumentPtr>& arguments);
 
   /// Create function signature by function name and arguments.
-  const std::string signature() const { return signature(name, arguments); }
+  const std::string signature() const {
+    return signature(name, arguments);
+  }
 };
 
 using FunctionVariantPtr = std::shared_ptr<FunctionVariant>;

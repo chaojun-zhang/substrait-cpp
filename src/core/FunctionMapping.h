@@ -14,9 +14,7 @@
 
 #pragma once
 
-#include "memory"
-#include "unordered_map"
-#include "vector"
+#include <unordered_map>
 
 namespace io::substrait {
 
@@ -25,7 +23,7 @@ using FunctionMap = std::unordered_map<std::string, std::string>;
 /// An interface describe the function names in difference between engine-own
 /// and substrait system.
 class FunctionMapping {
-public:
+ public:
   /// Scalar function names in difference between engine own and substrait.
   virtual const FunctionMap scalaMapping() const {
     static const FunctionMap scalaFunctionMap{};

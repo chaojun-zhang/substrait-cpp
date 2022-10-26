@@ -33,48 +33,48 @@ using FunctionVariantMap =
 using TypeVariantMap = std::unordered_map<std::string, TypeVariantPtr>;
 
 class Extension {
-public:
+ public:
   /// Deserialize default substrait extension.
   static std::shared_ptr<Extension> load();
 
   /// Deserialize substrait extension by given basePath and extensionFiles.
-  static std::shared_ptr<Extension>
-  load(const std::string &basePath,
-       const std::vector<std::string> &extensionFiles);
+  static std::shared_ptr<Extension> load(
+      const std::string& basePath,
+      const std::vector<std::string>& extensionFiles);
 
   /// Deserialize substrait extension by given extensionFiles.
-  static std::shared_ptr<Extension>
-  load(const std::vector<std::string> &extensionFiles);
+  static std::shared_ptr<Extension> load(
+      const std::vector<std::string>& extensionFiles);
 
   /// Add a scalar function variant.
-  void addScalarFunctionVariant(const FunctionVariantPtr &functionVariant);
+  void addScalarFunctionVariant(const FunctionVariantPtr& functionVariant);
 
   /// Add a aggregate function variant.
-  void addAggregateFunctionVariant(const FunctionVariantPtr &functionVariant);
+  void addAggregateFunctionVariant(const FunctionVariantPtr& functionVariant);
 
   /// Add a window function variant.
-  void addWindowFunctionVariant(const FunctionVariantPtr &functionVariant);
+  void addWindowFunctionVariant(const FunctionVariantPtr& functionVariant);
 
   /// Add a type variant.
-  void addTypeVariant(const TypeVariantPtr &functionVariant);
+  void addTypeVariant(const TypeVariantPtr& functionVariant);
 
   /// Lookup type variant by given type name.
   /// @return matched type variant
-  TypeVariantPtr lookupType(const std::string &typeName) const;
+  TypeVariantPtr lookupType(const std::string& typeName) const;
 
-  const FunctionVariantMap &scalaFunctionVariantMap() const {
+  const FunctionVariantMap& scalaFunctionVariantMap() const {
     return scalarFunctionVariantMap_;
   }
 
-  const FunctionVariantMap &windowFunctionVariantMap() const {
+  const FunctionVariantMap& windowFunctionVariantMap() const {
     return windowFunctionVariantMap_;
   }
 
-  const FunctionVariantMap &aggregateFunctionVariantMap() const {
+  const FunctionVariantMap& aggregateFunctionVariantMap() const {
     return aggregateFunctionVariantMap_;
   }
 
-private:
+ private:
   static std::shared_ptr<Extension> loadDefault();
 
   FunctionVariantMap scalarFunctionVariantMap_;
