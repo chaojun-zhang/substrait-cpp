@@ -10,5 +10,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_subdirectory(common)
-add_subdirectory(core)
+add_executable(
+        substrait_common_test
+        ExceptionsTest.cpp)
+
+add_test(
+        substrait_common_test
+        substrait_common_test)
+
+target_link_libraries(
+        substrait_common_test
+        substrait_common
+        gtest
+        gtest_main)

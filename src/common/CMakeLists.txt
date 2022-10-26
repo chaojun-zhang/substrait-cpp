@@ -10,5 +10,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_subdirectory(common)
-add_subdirectory(core)
+add_library(
+        substrait_common
+        Exceptions.cpp)
+
+target_link_libraries(
+        substrait_common
+        fmt)
+
+if (${BUILD_TESTING})
+    add_subdirectory(tests)
+endif ()

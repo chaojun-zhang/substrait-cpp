@@ -16,19 +16,19 @@
 
 namespace io::substrait {
 
-FunctionVariantPtr
-FunctionLookup::lookupFunction(const FunctionSignature &signature) const {
-  const auto &functionMappings = getFunctionMap();
+FunctionVariantPtr FunctionLookup::lookupFunction(
+    const FunctionSignature& signature) const {
+  const auto& functionMappings = getFunctionMap();
 
-  const auto &substraitFunctionName =
+  const auto& substraitFunctionName =
       functionMappings.find(signature.name) != functionMappings.end()
-          ? functionMappings.at(signature.name)
-          : signature.name;
+      ? functionMappings.at(signature.name)
+      : signature.name;
 
-  const auto &functionVariants = getFunctionVariants();
+  const auto& functionVariants = getFunctionVariants();
   auto functionVariantIter = functionVariants.find(substraitFunctionName);
   if (functionVariantIter != functionVariants.end()) {
-    for (const auto &candidateFunctionVariant : functionVariantIter->second) {
+    for (const auto& candidateFunctionVariant : functionVariantIter->second) {
       if (candidateFunctionVariant->tryMatch(signature)) {
         return candidateFunctionVariant;
       }

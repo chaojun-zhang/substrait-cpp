@@ -25,7 +25,6 @@ clean:
 	@rm -rf build-*
 
 build-common:
-
 	@mkdir -p build-${BUILD_TYPE}
 	@cd build-${BUILD_TYPE} && \
 	cmake -Wno-dev \

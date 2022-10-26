@@ -12,19 +12,20 @@
  * limitations under the License.
  */
 
-#include "yaml-cpp/yaml.h"
-
 #include "Extension.h"
+#include "yaml-cpp/yaml.h"
 
 namespace YAML {
 
 using namespace io::substrait;
 
-static bool decodeFunctionVariant(const Node &node, FunctionVariant &function) {
-  const auto &returnType = node["return"];
+namespace {
+
+bool decodeFunctionVariant(const Node& node, FunctionVariant& function) {
+  const auto& returnType = node["return"];
   if (returnType && returnType.IsScalar()) {
     /// Return type can be an expression.
-    const auto &returnExpr = returnType.as<std::string>();
+    const auto& returnExpr = returnType.as<std::string>();
     std::stringstream ss(returnExpr);
 
     // TODO: currently we only parse the last sentence of type definition, use
@@ -34,9 +35,9 @@ static bool decodeFunctionVariant(const Node &node, FunctionVariant &function) {
     }
     function.returnType = Type::decode(lastReturnType);
   }
-  const auto &args = node["args"];
+  const auto& args = node["args"];
   if (args && args.IsSequence()) {
-    for (auto &arg : args) {
+    for (auto& arg : args) {
       if (arg["options"]) { // enum argument
         auto enumArgument =
             std::make_shared<EnumArgument>(arg.as<EnumArgument>());
@@ -53,10 +54,10 @@ static bool decodeFunctionVariant(const Node &node, FunctionVariant &function) {
     }
   }
 
-  const auto &variadic = node["variadic"];
+  const auto& variadic = node["variadic"];
   if (variadic) {
-    auto &min = variadic["min"];
-    auto &max = variadic["max"];
+    auto& min = variadic["min"];
+    auto& max = variadic["max"];
     if (min) {
       function.variadic = std::make_optional<FunctionVariadic>(
           {min.as<int>(),
@@ -71,12 +72,15 @@ static bool decodeFunctionVariant(const Node &node, FunctionVariant &function) {
   return true;
 }
 
-template <> struct convert<EnumArgument> {
-  static bool decode(const Node &node, EnumArgument &argument) {
+} // namespace
+
+template <>
+struct convert<EnumArgument> {
+  static bool decode(const Node& node, EnumArgument& argument) {
     // 'options' is required property
-    const auto &options = node["options"];
+    const auto& options = node["options"];
     if (options && options.IsSequence()) {
-      auto &required = node["required"];
+      auto& required = node["required"];
       argument.required = required && required.as<bool>();
       return true;
     } else {
@@ -85,9 +89,10 @@ template <> struct convert<EnumArgument> {
   }
 };
 
-template <> struct convert<ValueArgument> {
-  static bool decode(const Node &node, ValueArgument &argument) {
-    const auto &value = node["value"];
+template <>
+struct convert<ValueArgument> {
+  static bool decode(const Node& node, ValueArgument& argument) {
+    const auto& value = node["value"];
     if (value && value.IsScalar()) {
       auto valueType = value.as<std::string>();
       argument.type = Type::decode(valueType);
@@ -97,25 +102,28 @@ template <> struct convert<ValueArgument> {
   }
 };
 
-template <> struct convert<TypeArgument> {
-  static bool decode(const Node &node, TypeArgument &argument) {
+template <>
+struct convert<TypeArgument> {
+  static bool decode(const Node& node, TypeArgument& argument) {
     // no properties need to populate for type argument, just return true if
     // 'type' element exists.
     return node["type"];
   }
 };
 
-template <> struct convert<ScalarFunctionVariant> {
-  static bool decode(const Node &node, ScalarFunctionVariant &function) {
+template <>
+struct convert<ScalarFunctionVariant> {
+  static bool decode(const Node& node, ScalarFunctionVariant& function) {
     return decodeFunctionVariant(node, function);
   };
 };
 
-template <> struct convert<AggregateFunctionVariant> {
-  static bool decode(const Node &node, AggregateFunctionVariant &function) {
-    const auto &res = decodeFunctionVariant(node, function);
+template <>
+struct convert<AggregateFunctionVariant> {
+  static bool decode(const Node& node, AggregateFunctionVariant& function) {
+    const auto& res = decodeFunctionVariant(node, function);
     if (res) {
-      const auto &intermediate = node["intermediate"];
+      const auto& intermediate = node["intermediate"];
       if (intermediate) {
         function.intermediate = Type::decode(intermediate.as<std::string>());
       }
@@ -124,9 +132,10 @@ template <> struct convert<AggregateFunctionVariant> {
   }
 };
 
-template <> struct convert<io::substrait::TypeVariant> {
-  static bool decode(const Node &node, io::substrait::TypeVariant &typeAnchor) {
-    const auto &name = node["name"];
+template <>
+struct convert<io::substrait::TypeVariant> {
+  static bool decode(const Node& node, io::substrait::TypeVariant& typeAnchor) {
+    const auto& name = node["name"];
     if (name && name.IsScalar()) {
       typeAnchor.name = name.as<std::string>();
       return true;
@@ -169,80 +178,80 @@ std::shared_ptr<Extension> Extension::loadDefault() {
       "functions_set.yaml",
       "unknown.yaml",
   };
-  const auto &extensionRootPath = getSubstraitExtensionAbsolutePath();
+  const auto& extensionRootPath = getSubstraitExtensionAbsolutePath();
   return load(extensionRootPath, extensionFiles);
 }
 
-std::shared_ptr<Extension>
-Extension::load(const std::string &basePath,
-                const std::vector<std::string> &extensionFiles) {
+std::shared_ptr<Extension> Extension::load(
+    const std::string& basePath,
+    const std::vector<std::string>& extensionFiles) {
   std::vector<std::string> yamlExtensionFiles;
   yamlExtensionFiles.reserve(extensionFiles.size());
-  for (auto &extensionFile : extensionFiles) {
+  for (auto& extensionFile : extensionFiles) {
     auto const pos = basePath.find_last_of('/');
-    const auto &extensionUri = basePath.substr(0, pos) + "/" + extensionFile;
+    const auto& extensionUri = basePath.substr(0, pos) + "/" + extensionFile;
     yamlExtensionFiles.emplace_back(extensionUri);
   }
   return load(yamlExtensionFiles);
 }
 
-std::shared_ptr<Extension>
-Extension::load(const std::vector<std::string> &extensionFiles) {
-  auto registry = std::make_shared<Extension>();
-  for (const auto &extensionUri : extensionFiles) {
-    const auto &node = YAML::LoadFile(extensionUri);
+std::shared_ptr<Extension> Extension::load(
+    const std::vector<std::string>& extensionFiles) {
+  auto extension = std::make_shared<Extension>();
+  for (const auto& extensionUri : extensionFiles) {
+    const auto& node = YAML::LoadFile(extensionUri);
 
-    const auto &scalarFunctions = node["scalar_functions"];
+    const auto& scalarFunctions = node["scalar_functions"];
     if (scalarFunctions && scalarFunctions.IsSequence()) {
-      for (auto &scalarFunctionNode : scalarFunctions) {
+      for (auto& scalarFunctionNode : scalarFunctions) {
         const auto functionName = scalarFunctionNode["name"].as<std::string>();
-        for (auto &scalaFunctionVariantNode : scalarFunctionNode["impls"]) {
+        for (auto& scalaFunctionVariantNode : scalarFunctionNode["impls"]) {
           auto scalarFunctionVariant =
               scalaFunctionVariantNode.as<ScalarFunctionVariant>();
           scalarFunctionVariant.name = functionName;
           scalarFunctionVariant.uri = extensionUri;
-          registry->addScalarFunctionVariant(
+          extension->addScalarFunctionVariant(
               std::make_shared<ScalarFunctionVariant>(scalarFunctionVariant));
         }
       }
     }
 
-    const auto &aggregateFunctions = node["aggregate_functions"];
+    const auto& aggregateFunctions = node["aggregate_functions"];
     if (aggregateFunctions && aggregateFunctions.IsSequence()) {
-      for (auto &aggregateFunctionNode : aggregateFunctions) {
+      for (auto& aggregateFunctionNode : aggregateFunctions) {
         const auto functionName =
             aggregateFunctionNode["name"].as<std::string>();
-        for (auto &aggregateFunctionVariantNode :
+        for (auto& aggregateFunctionVariantNode :
              aggregateFunctionNode["impls"]) {
           auto aggregateFunctionVariant =
               aggregateFunctionVariantNode.as<AggregateFunctionVariant>();
           aggregateFunctionVariant.name = functionName;
           aggregateFunctionVariant.uri = extensionUri;
-          registry->addAggregateFunctionVariant(
+          extension->addAggregateFunctionVariant(
               std::make_shared<AggregateFunctionVariant>(
                   aggregateFunctionVariant));
         }
       }
     }
 
-    const auto &types = node["types"];
+    const auto& types = node["types"];
     if (types && types.IsSequence()) {
-      for (auto &type : types) {
+      for (auto& type : types) {
         auto typeAnchor = type.as<TypeVariant>();
         typeAnchor.uri = extensionUri;
-        registry->addTypeVariant(std::make_shared<TypeVariant>(typeAnchor));
+        extension->addTypeVariant(std::make_shared<TypeVariant>(typeAnchor));
       }
     }
   }
-  return registry;
+  return extension;
 }
 
 void Extension::addWindowFunctionVariant(
-    const FunctionVariantPtr &functionVariant) {
-  const auto &functionVariants =
+    const FunctionVariantPtr& functionVariant) {
+  const auto& functionVariants =
       windowFunctionVariantMap_.find(functionVariant->name);
   if (functionVariants != windowFunctionVariantMap_.end()) {
-    auto &variants = functionVariants->second;
+    auto& variants = functionVariants->second;
     variants.emplace_back(functionVariant);
   } else {
     std::vector<FunctionVariantPtr> variants;
@@ -252,11 +261,11 @@ void Extension::addWindowFunctionVariant(
   }
 }
 
-void Extension::addTypeVariant(const TypeVariantPtr &functionVariant) {
+void Extension::addTypeVariant(const TypeVariantPtr& functionVariant) {
   typeVariantMap_.insert({functionVariant->name, functionVariant});
 }
 
-TypeVariantPtr Extension::lookupType(const std::string &typeName) const {
+TypeVariantPtr Extension::lookupType(const std::string& typeName) const {
   auto typeVariantIter = typeVariantMap_.find(typeName);
   if (typeVariantIter != typeVariantMap_.end()) {
     return typeVariantIter->second;
@@ -265,11 +274,11 @@ TypeVariantPtr Extension::lookupType(const std::string &typeName) const {
 }
 
 void Extension::addScalarFunctionVariant(
-    const FunctionVariantPtr &functionVariant) {
-  const auto &functionVariants =
+    const FunctionVariantPtr& functionVariant) {
+  const auto& functionVariants =
       scalarFunctionVariantMap_.find(functionVariant->name);
   if (functionVariants != scalarFunctionVariantMap_.end()) {
-    auto &variants = functionVariants->second;
+    auto& variants = functionVariants->second;
     variants.emplace_back(functionVariant);
   } else {
     std::vector<FunctionVariantPtr> variants;
@@ -280,12 +289,11 @@ void Extension::addScalarFunctionVariant(
 }
 
 void Extension::addAggregateFunctionVariant(
-    const FunctionVariantPtr &functionVariant) {
-
-  const auto &functionVariants =
+    const FunctionVariantPtr& functionVariant) {
+  const auto& functionVariants =
       aggregateFunctionVariantMap_.find(functionVariant->name);
   if (functionVariants != aggregateFunctionVariantMap_.end()) {
-    auto &variants = functionVariants->second;
+    auto& variants = functionVariants->second;
     variants.emplace_back(functionVariant);
   } else {
     std::vector<FunctionVariantPtr> variants;
