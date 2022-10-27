@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "../FunctionLookup.h"
+#include "core/FunctionLookup.h"
 #include <gtest/gtest.h>
 #include "iostream"
 
@@ -34,10 +34,17 @@ class VeloxFunctionMappings : public FunctionMapping {
   };
 };
 
-class SubstraitFunctionLookupTest : public ::testing::Test {
+class FunctionLookupTest : public ::testing::Test {
  protected:
+  std::string getExtensionAbsolutePath() {
+    const std::string absolute_path = __FILE__;
+    auto const pos = absolute_path.find_last_of('/');
+    return absolute_path.substr(0, pos) +
+        "/../../../third_party/substrait/extensions/";
+  }
+
   void SetUp() override {
-    ExtensionPtr extension_ = Extension::load();
+    ExtensionPtr extension_ = Extension::load(getExtensionAbsolutePath());
     FunctionMappingPtr mappings_ =
         std::make_shared<const VeloxFunctionMappings>();
     scalarFunctionLookup_ =
@@ -71,26 +78,34 @@ class SubstraitFunctionLookupTest : public ::testing::Test {
   FunctionLookupPtr aggregateFunctionLookup_;
 };
 
-TEST_F(SubstraitFunctionLookupTest, compare_function) {
-  testScalarFunctionLookup({"lt", {TINYINT(), TINYINT()}, BOOL()}, "lt:any1_any1");
+TEST_F(FunctionLookupTest, compare_function) {
+  testScalarFunctionLookup(
+      {"lt", {TINYINT(), TINYINT()}, BOOL()}, "lt:any1_any1");
 
-  testScalarFunctionLookup({"lt", {SMALLINT(), SMALLINT()}, BOOL()}, "lt:any1_any1");
+  testScalarFunctionLookup(
+      {"lt", {SMALLINT(), SMALLINT()}, BOOL()}, "lt:any1_any1");
 
-  testScalarFunctionLookup({"lt", {INTEGER(), INTEGER()}, BOOL()}, "lt:any1_any1");
+  testScalarFunctionLookup(
+      {"lt", {INTEGER(), INTEGER()}, BOOL()}, "lt:any1_any1");
 
-  testScalarFunctionLookup({"lt", {BIGINT(), BIGINT()}, BOOL()}, "lt:any1_any1");
+  testScalarFunctionLookup(
+      {"lt", {BIGINT(), BIGINT()}, BOOL()}, "lt:any1_any1");
 
   testScalarFunctionLookup({"lt", {FLOAT(), FLOAT()}, BOOL()}, "lt:any1_any1");
 
-  testScalarFunctionLookup({"lt", {DOUBLE(), DOUBLE()}, BOOL()}, "lt:any1_any1");
   testScalarFunctionLookup(
-      {"between", {TINYINT(), TINYINT(), TINYINT()}, BOOL()}, "between:any1_any1_any1");
+      {"lt", {DOUBLE(), DOUBLE()}, BOOL()}, "lt:any1_any1");
+  testScalarFunctionLookup(
+      {"between", {TINYINT(), TINYINT(), TINYINT()}, BOOL()},
+      "between:any1_any1_any1");
 }
 
-TEST_F(SubstraitFunctionLookupTest, arithmetic_function) {
-  testScalarFunctionLookup({"add", {TINYINT(), TINYINT()}, TINYINT()}, "add:opt_i8_i8");
+TEST_F(FunctionLookupTest, arithmetic_function) {
+  testScalarFunctionLookup(
+      {"add", {TINYINT(), TINYINT()}, TINYINT()}, "add:opt_i8_i8");
 
-  testScalarFunctionLookup({"plus", {TINYINT(), TINYINT()}, TINYINT()}, "add:opt_i8_i8");
+  testScalarFunctionLookup(
+      {"plus", {TINYINT(), TINYINT()}, TINYINT()}, "add:opt_i8_i8");
   testScalarFunctionLookup(
       {"divide",
        {
@@ -101,21 +116,20 @@ TEST_F(SubstraitFunctionLookupTest, arithmetic_function) {
       "divide:opt_opt_opt_fp32_fp32");
 }
 
-TEST_F(SubstraitFunctionLookupTest, aggregate) {
+TEST_F(FunctionLookupTest, aggregate) {
   // for intermediate type
   testAggregateFunctionLookup(
       {"avg", {Type::decode("struct<fp64,i64>")}, FLOAT()}, "avg:opt_fp32");
 }
 
-TEST_F(SubstraitFunctionLookupTest, logical) {
+TEST_F(FunctionLookupTest, logical) {
   testScalarFunctionLookup({"and", {BOOL(), BOOL()}, BOOL()}, "and:bool");
   testScalarFunctionLookup({"or", {BOOL(), BOOL()}, BOOL()}, "or:bool");
   testScalarFunctionLookup({"not", {BOOL()}, BOOL()}, "not:bool");
-  testScalarFunctionLookup(
-      {"xor", {BOOL(), BOOL()}, BOOL()}, "xor:bool_bool");
+  testScalarFunctionLookup({"xor", {BOOL(), BOOL()}, BOOL()}, "xor:bool_bool");
 }
 
-TEST_F(SubstraitFunctionLookupTest, string_function) {
+TEST_F(FunctionLookupTest, string_function) {
   testScalarFunctionLookup(
       {"like", {STRING(), STRING()}, BOOL()}, "like:opt_str_str");
   testScalarFunctionLookup(

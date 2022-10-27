@@ -13,10 +13,10 @@
  */
 
 #include "Type.h"
+#include <algorithm>
 #include <sstream>
 #include <stdexcept>
 #include "../common/Exceptions.h"
-#include "../proto/substrait/type.pb.h"
 
 namespace io::substrait {
 
@@ -294,63 +294,63 @@ std::shared_ptr<const ScalarType<TypeKind::kBool>> BOOL() {
 }
 
 std::shared_ptr<const ScalarType<TypeKind::kI8>> TINYINT() {
-  return std::shared_ptr<const ScalarType<TypeKind::kI8>>();
+  return std::make_shared<const ScalarType<TypeKind::kI8>>();
 }
 
 std::shared_ptr<const ScalarType<TypeKind::kI16>> SMALLINT() {
-  return std::shared_ptr<const ScalarType<TypeKind::kI16>>();
+  return std::make_shared<const ScalarType<TypeKind::kI16>>();
 }
 
 std::shared_ptr<const ScalarType<TypeKind::kI32>> INTEGER() {
-  return std::shared_ptr<const ScalarType<TypeKind::kI32>>();
+  return std::make_shared<const ScalarType<TypeKind::kI32>>();
 }
 
 std::shared_ptr<const ScalarType<TypeKind::kI64>> BIGINT() {
-  return std::shared_ptr<const ScalarType<TypeKind::kI64>>();
+  return std::make_shared<const ScalarType<TypeKind::kI64>>();
 }
 
 std::shared_ptr<const ScalarType<TypeKind::kFp32>> FLOAT() {
-  return std::shared_ptr<const ScalarType<TypeKind::kFp32>>();
+  return std::make_shared<const ScalarType<TypeKind::kFp32>>();
 }
 
 std::shared_ptr<const ScalarType<TypeKind::kFp64>> DOUBLE() {
-  return std::shared_ptr<const ScalarType<TypeKind::kFp64>>();
+  return std::make_shared<const ScalarType<TypeKind::kFp64>>();
 }
 
 std::shared_ptr<const ScalarType<TypeKind::kString>> STRING() {
-  return std::shared_ptr<const ScalarType<TypeKind::kString>>();
+  return std::make_shared<const ScalarType<TypeKind::kString>>();
 }
 
 std::shared_ptr<const ScalarType<TypeKind::kBinary>> BINARY() {
-  return std::shared_ptr<const ScalarType<TypeKind::kBinary>>();
+  return std::make_shared<const ScalarType<TypeKind::kBinary>>();
 }
 
 std::shared_ptr<const ScalarType<TypeKind::kTimestamp>> TIMESTAMP() {
-  return std::shared_ptr<const ScalarType<TypeKind::kTimestamp>>();
+  return std::make_shared<const ScalarType<TypeKind::kTimestamp>>();
 }
 
 std::shared_ptr<const ScalarType<TypeKind::kDate>> DATE() {
-  return std::shared_ptr<const ScalarType<TypeKind::kDate>>();
+  return std::make_shared<const ScalarType<TypeKind::kDate>>();
 }
 
 std::shared_ptr<const ScalarType<TypeKind::kTime>> TIME() {
-  return std::shared_ptr<const ScalarType<TypeKind::kTime>>();
+  return std::make_shared<const ScalarType<TypeKind::kTime>>();
 }
 
 std::shared_ptr<const ScalarType<TypeKind::kIntervalYear>> INTERVAL_YEAR() {
-  return std::shared_ptr<const ScalarType<TypeKind::kIntervalYear>>();
+  return std::make_shared<const ScalarType<TypeKind::kIntervalYear>>();
 }
 
 std::shared_ptr<const ScalarType<TypeKind::kIntervalDay>> INTERVAL_DAY() {
-  return std::shared_ptr<const ScalarType<TypeKind::kIntervalDay>>();
+  return std::make_shared<const ScalarType<TypeKind::kIntervalDay>>();
 }
 
 std::shared_ptr<const ScalarType<TypeKind::kTimestampTz>> TIMESTAMP_TZ() {
-  return std::shared_ptr<const ScalarType<TypeKind::kTimestampTz>>();
+  return std::make_shared<const ScalarType<TypeKind::kTimestampTz>>();
 }
 
 std::shared_ptr<const ScalarType<TypeKind::kUuid>> UUID() {
-  return std::shared_ptr<const ScalarType<TypeKind::kUuid>>();
+  return std::make_shared<const ScalarType<TypeKind::kUuid>>();
 }
 
 } // namespace io::substrait
