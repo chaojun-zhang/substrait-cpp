@@ -98,10 +98,15 @@ struct YAML::convert<io::substrait::ValueArgument> {
 
 template <>
 struct YAML::convert<io::substrait::TypeArgument> {
-  static bool decode(const Node& node, io::substrait::TypeArgument& argument) {
+  static bool decode(
+      const YAML::Node& node,
+      io::substrait::TypeArgument& argument) {
     // no properties need to populate for type argument, just return true if
     // 'type' element exists.
-    return node["type"];
+    if (node["type"]) {
+      return true;
+    }
+    return false;
   }
 };
 
@@ -145,16 +150,6 @@ struct YAML::convert<io::substrait::TypeVariant> {
 
 namespace io::substrait {
 
-namespace {
-
-std::string getSubstraitExtensionAbsolutePath() {
-  const std::string absolute_path = __FILE__;
-  auto const pos = absolute_path.find_last_of('/');
-  return absolute_path.substr(0, pos) + "/../third_party/substrait/extensions/";
-}
-
-} // namespace
-
 std::shared_ptr<Extension> Extension::load(const std::string& basePath) {
   static const std::vector<std::string> extensionFiles{
       "functions_aggregate_approx.yaml",
@@ -170,8 +165,7 @@ std::shared_ptr<Extension> Extension::load(const std::string& basePath) {
       "functions_set.yaml",
       "unknown.yaml",
   };
-  const auto& extensionRootPath = getSubstraitExtensionAbsolutePath();
-  return load(extensionRootPath, extensionFiles);
+  return load(basePath, extensionFiles);
 }
 
 std::shared_ptr<Extension> Extension::load(

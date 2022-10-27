@@ -12,10 +12,8 @@
  * limitations under the License.
  */
 
-#include "../Exceptions.h"
+#include "common/Exceptions.h"
 #include <gtest/gtest.h>
-
-using namespace io::substrait::common;
 
 class SubstraitExceptionTest : public ::testing::Test {};
 

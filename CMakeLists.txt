@@ -29,4 +29,5 @@ find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 
 add_subdirectory(third_party)
+include_directories(src)
 add_subdirectory(src)

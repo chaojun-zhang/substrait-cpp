@@ -10,11 +10,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 # Set up Proto
 set(PROTO_DIRECTORY ${CMAKE_SOURCE_DIR}/third_party/substrait/proto)
 set(SUBSTRAIT_PROTO_DIRECTORY ${PROTO_DIRECTORY}/substrait)
-set(PROTO_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/src/proto")
-file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/src/proto/substrait)
+set(PROTO_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/third_party/substrait/proto")
 file(GLOB PROTO_FILES ${SUBSTRAIT_PROTO_DIRECTORY}/*.proto
         ${SUBSTRAIT_PROTO_DIRECTORY}/extensions/*.proto)
 foreach (PROTO ${PROTO_FILES})
@@ -25,7 +25,6 @@ foreach (PROTO ${PROTO_FILES})
 endforeach ()
 set(PROTO_OUTPUT_FILES ${PROTO_HDRS} ${PROTO_SRCS})
 set_source_files_properties(${PROTO_OUTPUT_FILES} PROPERTIES GENERATED TRUE)
-
 get_filename_component(PROTO_DIR ${SUBSTRAIT_PROTO_DIRECTORY}/, DIRECTORY)
 
 # Generate Substrait hearders
@@ -36,11 +35,10 @@ add_custom_command(
         DEPENDS ${PROTO_DIR}
         COMMENT "Running PROTO compiler"
         VERBATIM)
-add_custom_target(substrait_proto ALL DEPENDS ${PROTO_OUTPUT_FILES})
-add_dependencies(substrait_proto protobuf::libprotobuf)
+
+include_directories(${PROTO_OUTPUT_DIR})
 
 set(SRCS
-        ${PROTO_SRCS}
         Type.cpp
         Function.cpp
         Extension.cpp
@@ -48,15 +46,12 @@ set(SRCS
         FunctionLookup.cpp
         FunctionSignature.h)
 
-add_library(substrait-core
-        ${SRCS})
+add_library(substrait-core ${SRCS})
 
-target_include_directories(
-        substrait-core
-        PUBLIC ${PROTO_OUTPUT_DIR})
 target_link_libraries(
         substrait-core
-        substrait_common yaml-cpp)
+        substrait_common
+        yaml-cpp)
 
 if (${BUILD_TESTING})
     add_subdirectory(tests)

@@ -34,7 +34,7 @@ using TypeVariantMap = std::unordered_map<std::string, TypeVariantPtr>;
 
 class Extension {
  public:
-  /// Deserialize default substrait extension.
+  /// Deserialize default substrait extension by given basePath
   /// @throws exception if file not found
   static std::shared_ptr<Extension> load(const std::string& basePath);
 
