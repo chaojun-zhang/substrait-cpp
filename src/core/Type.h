@@ -439,24 +439,21 @@ class UsedDefinedType : public TypeBase<TypeKind ::kUserDefined> {
   const std::string value_;
 };
 
-#define SCALAR_ACCESSOR(KIND) \
-  std::shared_ptr<const ScalarType<TypeKind::KIND>> KIND()
-
-SCALAR_ACCESSOR(kBool);
-SCALAR_ACCESSOR(kI8);
-SCALAR_ACCESSOR(kI16);
-SCALAR_ACCESSOR(kI32);
-SCALAR_ACCESSOR(kI64);
-SCALAR_ACCESSOR(kFp32);
-SCALAR_ACCESSOR(kFp64);
-SCALAR_ACCESSOR(kString);
-SCALAR_ACCESSOR(kBinary);
-SCALAR_ACCESSOR(kTimestamp);
-SCALAR_ACCESSOR(kDate);
-SCALAR_ACCESSOR(kTime);
-SCALAR_ACCESSOR(kIntervalYear);
-SCALAR_ACCESSOR(kIntervalDay);
-SCALAR_ACCESSOR(kTimestampTz);
-SCALAR_ACCESSOR(kUuid);
+std::shared_ptr<const ScalarType<TypeKind::kBool>> BOOL();
+std::shared_ptr<const ScalarType<TypeKind::kI8>> TINYINT();
+std::shared_ptr<const ScalarType<TypeKind::kI16>> SMALLINT();
+std::shared_ptr<const ScalarType<TypeKind::kI32>> INTEGER();
+std::shared_ptr<const ScalarType<TypeKind::kI64>> BIGINT();
+std::shared_ptr<const ScalarType<TypeKind::kFp32>> FLOAT();
+std::shared_ptr<const ScalarType<TypeKind::kFp64>> DOUBLE();
+std::shared_ptr<const ScalarType<TypeKind::kString>> STRING();
+std::shared_ptr<const ScalarType<TypeKind::kBinary>> BINARY();
+std::shared_ptr<const ScalarType<TypeKind::kTimestamp>> TIMESTAMP();
+std::shared_ptr<const ScalarType<TypeKind::kDate>> DATE();
+std::shared_ptr<const ScalarType<TypeKind::kTime>> TIME();
+std::shared_ptr<const ScalarType<TypeKind::kIntervalYear>> INTERVAL_YEAR();
+std::shared_ptr<const ScalarType<TypeKind::kIntervalDay>> INTERVAL_DAY();
+std::shared_ptr<const ScalarType<TypeKind::kTimestampTz>> TIMESTAMP_TZ();
+std::shared_ptr<const ScalarType<TypeKind::kUuid>> UUID();
 
 } // namespace io::substrait

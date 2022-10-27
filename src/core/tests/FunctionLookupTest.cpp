@@ -20,12 +20,8 @@ using namespace io::substrait;
 
 class VeloxFunctionMappings : public FunctionMapping {
  public:
-  static const std::shared_ptr<VeloxFunctionMappings> make() {
-    return std::make_shared<VeloxFunctionMappings>();
-  }
-
   /// scalar function names in difference between  velox and Substrait.
-  const FunctionMap scalaMapping() const override {
+  const FunctionMap& scalaMapping() const override {
     static const FunctionMap scalarMappings{
         {"plus", "add"},
         {"minus", "subtract"},
@@ -76,58 +72,58 @@ class SubstraitFunctionLookupTest : public ::testing::Test {
 };
 
 TEST_F(SubstraitFunctionLookupTest, compare_function) {
-  testScalarFunctionLookup({"lt", {kI8(), kI8()}, kBool()}, "lt:any1_any1");
+  testScalarFunctionLookup({"lt", {TINYINT(), TINYINT()}, BOOL()}, "lt:any1_any1");
 
-  testScalarFunctionLookup({"lt", {kI16(), kI16()}, kBool()}, "lt:any1_any1");
+  testScalarFunctionLookup({"lt", {SMALLINT(), SMALLINT()}, BOOL()}, "lt:any1_any1");
 
-  testScalarFunctionLookup({"lt", {kI32(), kI32()}, kBool()}, "lt:any1_any1");
+  testScalarFunctionLookup({"lt", {INTEGER(), INTEGER()}, BOOL()}, "lt:any1_any1");
 
-  testScalarFunctionLookup({"lt", {kI64(), kI64()}, kBool()}, "lt:any1_any1");
+  testScalarFunctionLookup({"lt", {BIGINT(), BIGINT()}, BOOL()}, "lt:any1_any1");
 
-  testScalarFunctionLookup({"lt", {kFp32(), kFp32()}, kBool()}, "lt:any1_any1");
+  testScalarFunctionLookup({"lt", {FLOAT(), FLOAT()}, BOOL()}, "lt:any1_any1");
 
-  testScalarFunctionLookup({"lt", {kFp64(), kFp64()}, kBool()}, "lt:any1_any1");
+  testScalarFunctionLookup({"lt", {DOUBLE(), DOUBLE()}, BOOL()}, "lt:any1_any1");
   testScalarFunctionLookup(
-      {"between", {kI8(), kI8(), kI8()}, kBool()}, "between:any1_any1_any1");
+      {"between", {TINYINT(), TINYINT(), TINYINT()}, BOOL()}, "between:any1_any1_any1");
 }
 
 TEST_F(SubstraitFunctionLookupTest, arithmetic_function) {
-  testScalarFunctionLookup({"add", {kI8(), kI8()}, kI8()}, "add:opt_i8_i8");
+  testScalarFunctionLookup({"add", {TINYINT(), TINYINT()}, TINYINT()}, "add:opt_i8_i8");
 
-  testScalarFunctionLookup({"plus", {kI8(), kI8()}, kI8()}, "add:opt_i8_i8");
+  testScalarFunctionLookup({"plus", {TINYINT(), TINYINT()}, TINYINT()}, "add:opt_i8_i8");
   testScalarFunctionLookup(
       {"divide",
        {
-           kFp32(),
-           kFp32(),
+           FLOAT(),
+           FLOAT(),
        },
-       kFp32()},
+       FLOAT()},
       "divide:opt_opt_opt_fp32_fp32");
 }
 
 TEST_F(SubstraitFunctionLookupTest, aggregate) {
   // for intermediate type
   testAggregateFunctionLookup(
-      {"avg", {Type::decode("struct<fp64,i64>")}, kFp32()}, "avg:opt_fp32");
+      {"avg", {Type::decode("struct<fp64,i64>")}, FLOAT()}, "avg:opt_fp32");
 }
 
 TEST_F(SubstraitFunctionLookupTest, logical) {
-  testScalarFunctionLookup({"and", {kBool(), kBool()}, kBool()}, "and:bool");
-  testScalarFunctionLookup({"or", {kBool(), kBool()}, kBool()}, "or:bool");
-  testScalarFunctionLookup({"not", {kBool()}, kBool()}, "not:bool");
+  testScalarFunctionLookup({"and", {BOOL(), BOOL()}, BOOL()}, "and:bool");
+  testScalarFunctionLookup({"or", {BOOL(), BOOL()}, BOOL()}, "or:bool");
+  testScalarFunctionLookup({"not", {BOOL()}, BOOL()}, "not:bool");
   testScalarFunctionLookup(
-      {"xor", {kBool(), kBool()}, kBool()}, "xor:bool_bool");
+      {"xor", {BOOL(), BOOL()}, BOOL()}, "xor:bool_bool");
 }
 
 TEST_F(SubstraitFunctionLookupTest, string_function) {
   testScalarFunctionLookup(
-      {"like", {kString(), kString()}, kBool()}, "like:opt_str_str");
+      {"like", {STRING(), STRING()}, BOOL()}, "like:opt_str_str");
   testScalarFunctionLookup(
       {"like",
        {Type::decode("varchar<L1>"), Type::decode("varchar<L2>")},
-       kBool()},
+       BOOL()},
       "like:opt_vchar<L1>_vchar<L2>");
   testScalarFunctionLookup(
-      {"substr", {kString(), kI32(), kI32()}, kString()},
+      {"substr", {STRING(), INTEGER(), INTEGER()}, STRING()},
       "substring:str_i32_i32");
 }
