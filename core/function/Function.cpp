@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "Function.h"
+#include "function/Function.h"
 #include <sstream>
 
 namespace io::substrait {

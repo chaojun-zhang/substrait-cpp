@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "Type.h"
+#include "type/Type.h"
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>

@@ -13,8 +13,8 @@
 set(FUNCTION_SRCS
         Function.cpp
         Extension.cpp
-        FunctionMapping.h
-        FunctionSignature.h
+        ../../include/function/FunctionMapping.h
+        ../../include/function/FunctionSignature.h
         FunctionLookup.cpp)
 
 add_library(substrait_function ${FUNCTION_SRCS})

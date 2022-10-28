@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "Extension.h"
+#include "function/Extension.h"
 #include "yaml-cpp/yaml.h"
 
 bool decodeFunctionVariant(
