@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Exceptions.h"
+#include "common/Exceptions.h"
 #include "fmt/format.h"
 
 namespace io::substrait {

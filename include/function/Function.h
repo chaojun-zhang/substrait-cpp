@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "FunctionSignature.h"
+#include "function/FunctionSignature.h"
 #include "type/Type.h"
 
 namespace io::substrait {
