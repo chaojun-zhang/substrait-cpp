@@ -3,10 +3,10 @@
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
-
+#include "substrait/type/Type.h"
 #include "substrait/common/Exceptions.h"
 #include "substrait/common/NumberUtils.h"
-#include "substrait/type/Type.h"
+#include "substrait/type/TypeVisitor.h"
 
 namespace io::substrait {
 
@@ -528,100 +528,99 @@ bool ParameterizedMap::isMatch(
   return false;
 }
 
-std::shared_ptr<const ScalarType<TypeKind::kBool>> BOOL() {
-  return std::make_shared<const ScalarType<TypeKind::kBool>>(false);
+std::shared_ptr<const Bool> BOOL(bool nullable) {
+  return std::make_shared<const Bool>(nullable);
 }
 
-std::shared_ptr<const ScalarType<TypeKind::kI8>> TINYINT() {
-  return std::make_shared<const ScalarType<TypeKind::kI8>>(false);
+std::shared_ptr<const TinyInt> TINYINT(bool nullable) {
+  return std::make_shared<const TinyInt>(nullable);
 }
 
-std::shared_ptr<const ScalarType<TypeKind::kI16>> SMALLINT() {
-  return std::make_shared<const ScalarType<TypeKind::kI16>>(false);
+std::shared_ptr<const SmallInt> SMALLINT(bool nullable) {
+  return std::make_shared<const SmallInt>(nullable);
 }
 
-std::shared_ptr<const ScalarType<TypeKind::kI32>> INTEGER() {
-  return std::make_shared<const ScalarType<TypeKind::kI32>>(false);
+std::shared_ptr<const Integer> INTEGER(bool nullable) {
+  return std::make_shared<const Integer>(nullable);
 }
 
-std::shared_ptr<const ScalarType<TypeKind::kI64>> BIGINT() {
-  return std::make_shared<const ScalarType<TypeKind::kI64>>(false);
+std::shared_ptr<const BigInt> BIGINT(bool nullable) {
+  return std::make_shared<const BigInt>(nullable);
 }
-std::shared_ptr<const ScalarType<TypeKind::kFp32>> FLOAT() {
-  return std::make_shared<const ScalarType<TypeKind::kFp32>>(false);
-}
-
-std::shared_ptr<const ScalarType<TypeKind::kFp64>> DOUBLE() {
-  return std::make_shared<const ScalarType<TypeKind::kFp64>>(false);
+std::shared_ptr<const Float> FLOAT(bool nullable) {
+  return std::make_shared<const Float>(nullable);
 }
 
-std::shared_ptr<const ScalarType<TypeKind::kString>> STRING() {
-  return std::make_shared<const ScalarType<TypeKind::kString>>(false);
+std::shared_ptr<const Double> DOUBLE(bool nullable) {
+  return std::make_shared<const Double>(nullable);
 }
 
-std::shared_ptr<const ScalarType<TypeKind::kBinary>> BINARY() {
-  return std::make_shared<const ScalarType<TypeKind::kBinary>>(false);
+std::shared_ptr<const String> STRING(bool nullable) {
+  return std::make_shared<const String>(nullable);
 }
 
-std::shared_ptr<const ScalarType<TypeKind::kTimestamp>> TIMESTAMP() {
-  return std::make_shared<const ScalarType<TypeKind::kTimestamp>>(false);
+std::shared_ptr<const Binary> BINARY(bool nullable) {
+  return std::make_shared<const Binary>(nullable);
 }
 
-std::shared_ptr<const ScalarType<TypeKind::kDate>> DATE() {
-  return std::make_shared<const ScalarType<TypeKind::kDate>>(false);
+std::shared_ptr<const Timestamp> TIMESTAMP(bool nullable) {
+  return std::make_shared<const Timestamp>(nullable);
 }
 
-std::shared_ptr<const ScalarType<TypeKind::kTime>> TIME() {
-  return std::make_shared<const ScalarType<TypeKind::kTime>>(false);
+std::shared_ptr<const Date> DATE(bool nullable) {
+  return std::make_shared<const Date>(nullable);
 }
 
-std::shared_ptr<const ScalarType<TypeKind::kIntervalYear>> INTERVAL_YEAR() {
-  return std::make_shared<const ScalarType<TypeKind::kIntervalYear>>(false);
+std::shared_ptr<const Time> TIME(bool nullable) {
+  return std::make_shared<const Time>(nullable);
 }
 
-std::shared_ptr<const ScalarType<TypeKind::kIntervalDay>> INTERVAL_DAY() {
-  return std::make_shared<const ScalarType<TypeKind::kIntervalDay>>(false);
+std::shared_ptr<const IntervalYear> INTERVAL_YEAR(bool nullable) {
+  return std::make_shared<const IntervalYear>(nullable);
 }
 
-std::shared_ptr<const ScalarType<TypeKind::kTimestampTz>> TIMESTAMP_TZ() {
-  return std::make_shared<const ScalarType<TypeKind::kTimestampTz>>(false);
+std::shared_ptr<const IntervalDay> INTERVAL_DAY(bool nullable) {
+  return std::make_shared<const IntervalDay>(nullable);
 }
 
-std::shared_ptr<const ScalarType<TypeKind::kUuid>> UUID() {
-  return std::make_shared<const ScalarType<TypeKind::kUuid>>(false);
+std::shared_ptr<const TimestampTz> TIMESTAMP_TZ(bool nullable) {
+  return std::make_shared<const TimestampTz>(nullable);
 }
 
-std::shared_ptr<const Decimal> DECIMAL(int precision, int scale) {
-  return std::make_shared<const Decimal>(precision, scale, false);
+std::shared_ptr<const Uuid> UUID(bool nullable) {
+  return std::make_shared<const Uuid>(nullable);
 }
 
-std::shared_ptr<const Varchar> VARCHAR(int len) {
-  return std::make_shared<const Varchar>(len, false);
-}
-std::shared_ptr<const FixedChar> FCHAR(int len) {
-  return std::make_shared<const FixedChar>(len, false);
+std::shared_ptr<const Decimal>
+DECIMAL(int precision, int scale, bool nullable) {
+  return std::make_shared<const Decimal>(precision, scale, nullable);
 }
 
-std::shared_ptr<const FixedBinary> FIXED_BINARY(int len) {
-  return std::make_shared<const FixedBinary>(len, false);
+std::shared_ptr<const Varchar> VARCHAR(int len, bool nullable) {
+  return std::make_shared<const Varchar>(len, nullable);
 }
 
-std::shared_ptr<const List> LIST(const TypePtr& elementType) {
-  return std::make_shared<const List>(elementType, false);
+std::shared_ptr<const FixedBinary> FIXED_BINARY(int len, bool nullable) {
+  return std::make_shared<const FixedBinary>(len, nullable);
 }
 
-std::shared_ptr<const Map> MAP(
-    const TypePtr& keyType,
-    const TypePtr& valueType) {
-  return std::make_shared<const Map>(keyType, valueType, false);
+std::shared_ptr<const List> LIST(const TypePtr& elementType, bool nullable) {
+  return std::make_shared<const List>(elementType, nullable);
 }
 
-std::shared_ptr<const Struct> STRUCT(const std::vector<TypePtr>& children) {
-  return std::make_shared<const Struct>(children, false);
+std::shared_ptr<const Map>
+MAP(const TypePtr& keyType, const TypePtr& valueType, bool nullable) {
+  return std::make_shared<const Map>(keyType, valueType, nullable);
 }
 
-std::shared_ptr<const FixedChar> FIXED_CHAR(int len) {
-  return std::make_shared<const FixedChar>(len);
+std::shared_ptr<const Struct> STRUCT(
+    const std::vector<TypePtr>& children,
+    bool nullable) {
+  return std::make_shared<const Struct>(children, nullable);
+}
+
+std::shared_ptr<const FixedChar> FIXED_CHAR(int len, bool nullable) {
+  return std::make_shared<const FixedChar>(len, nullable);
 }
 
 bool StringLiteral::isMatch(
@@ -635,6 +634,16 @@ bool StringLiteral::isMatch(
     }
     return false;
   }
+}
+
+template <TypeKind Kind, typename Visitable>
+void TypeBase<Kind, Visitable>::accept(TypeVisitor& v) {
+  v.visit(static_cast<const Visitable&>(*this));
+}
+
+template <typename Visitable>
+void ParameterizedTypeBase<Visitable>::accept(TypeVisitor& v) {
+  v.visit(static_cast<const Visitable&>(*this));
 }
 
 } // namespace io::substrait

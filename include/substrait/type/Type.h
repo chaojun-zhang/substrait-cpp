@@ -180,6 +180,8 @@ struct TypeTraits<TypeKind::kMap> {
   static constexpr const char* typeString = "map";
 };
 
+class TypeVisitor;
+
 class ParameterizedType {
  public:
   explicit ParameterizedType(bool nullable = false) : nullable_(nullable) {}
@@ -214,6 +216,8 @@ class ParameterizedType {
   [[nodiscard]] virtual bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const = 0;
 
+  virtual void accept(TypeVisitor& visitor) = 0;
+
  private:
   const bool nullable_;
 };
@@ -228,7 +232,7 @@ class Type : public ParameterizedType {
 using TypePtr = std::shared_ptr<const Type>;
 
 /// Types used in function argument declarations.
-template <TypeKind Kind>
+template <TypeKind Kind, typename Visitable>
 class TypeBase : public Type {
  public:
   explicit TypeBase(bool nullable = false) : Type(nullable) {}
@@ -245,18 +249,20 @@ class TypeBase : public Type {
       const std::shared_ptr<const ParameterizedType>& type) const override {
     return kind() == type->kind() && nullMatch(type);
   }
+
+  void accept(TypeVisitor& v) override;
 };
 
-template <TypeKind Kind>
-class ScalarType : public TypeBase<Kind> {
+template <TypeKind Kind, typename Visitable>
+class ScalarType : public TypeBase<Kind, Visitable> {
  public:
-  explicit ScalarType(bool nullable) : TypeBase<Kind>(nullable) {}
+  explicit ScalarType(bool nullable) : TypeBase<Kind, Visitable>(nullable) {}
 };
 
-class Decimal : public TypeBase<TypeKind::kDecimal> {
+class Decimal : public TypeBase<TypeKind::kDecimal, Decimal> {
  public:
   Decimal(int precision, int scale, bool nullable = false)
-      : TypeBase<TypeKind::kDecimal>(nullable),
+      : TypeBase<TypeKind::kDecimal, Decimal>(nullable),
         precision_(precision),
         scale_(scale) {}
 
@@ -278,10 +284,11 @@ class Decimal : public TypeBase<TypeKind::kDecimal> {
   const int scale_;
 };
 
-class FixedBinary : public TypeBase<TypeKind::kFixedBinary> {
+class FixedBinary : public TypeBase<TypeKind::kFixedBinary, FixedBinary> {
  public:
   explicit FixedBinary(int length, bool nullable = false)
-      : TypeBase<TypeKind::kFixedBinary>(nullable), length_(length) {}
+      : TypeBase<TypeKind::kFixedBinary, FixedBinary>(nullable),
+        length_(length) {}
 
   [[nodiscard]] const int& length() const {
     return length_;
@@ -296,10 +303,10 @@ class FixedBinary : public TypeBase<TypeKind::kFixedBinary> {
   const int length_;
 };
 
-class FixedChar : public TypeBase<TypeKind::kFixedChar> {
+class FixedChar : public TypeBase<TypeKind::kFixedChar, FixedChar> {
  public:
   explicit FixedChar(int length, bool nullable = false)
-      : TypeBase<TypeKind::kFixedChar>(nullable), length_(length){};
+      : TypeBase<TypeKind::kFixedChar, FixedChar>(nullable), length_(length){};
 
   [[nodiscard]] const int& length() const {
     return length_;
@@ -314,10 +321,10 @@ class FixedChar : public TypeBase<TypeKind::kFixedChar> {
   const int length_;
 };
 
-class Varchar : public TypeBase<TypeKind::kVarchar> {
+class Varchar : public TypeBase<TypeKind::kVarchar, Varchar> {
  public:
   explicit Varchar(int length, bool nullable = false)
-      : TypeBase<TypeKind::kVarchar>(nullable), length_(length){};
+      : TypeBase<TypeKind::kVarchar, Varchar>(nullable), length_(length){};
 
   [[nodiscard]] const int& length() const {
     return length_;
@@ -332,10 +339,10 @@ class Varchar : public TypeBase<TypeKind::kVarchar> {
   const int length_;
 };
 
-class List : public TypeBase<TypeKind::kList> {
+class List : public TypeBase<TypeKind::kList, List> {
  public:
   explicit List(TypePtr elementType, bool nullable = false)
-      : TypeBase<TypeKind::kList>(nullable),
+      : TypeBase<TypeKind::kList, List>(nullable),
         elementType_(std::move(elementType)){};
 
   [[nodiscard]] const TypePtr& elementType() const {
@@ -351,10 +358,11 @@ class List : public TypeBase<TypeKind::kList> {
   const TypePtr elementType_;
 };
 
-class Struct : public TypeBase<TypeKind::kStruct> {
+class Struct : public TypeBase<TypeKind::kStruct, Struct> {
  public:
   explicit Struct(std::vector<TypePtr> types, bool nullable = false)
-      : TypeBase<TypeKind::kStruct>(nullable), children_(std::move(types)) {}
+      : TypeBase<TypeKind::kStruct, Struct>(nullable),
+        children_(std::move(types)) {}
 
   [[nodiscard]] std::string signature() const override;
 
@@ -369,10 +377,10 @@ class Struct : public TypeBase<TypeKind::kStruct> {
   const std::vector<TypePtr> children_;
 };
 
-class Map : public TypeBase<TypeKind::kMap> {
+class Map : public TypeBase<TypeKind::kMap, Map> {
  public:
   Map(TypePtr keyType, TypePtr valueType, bool nullable = false)
-      : TypeBase<TypeKind::kMap>(nullable),
+      : TypeBase<TypeKind::kMap, Map>(nullable),
         keyType_(std::move(keyType)),
         valueType_(std::move(valueType)) {}
 
@@ -394,14 +402,17 @@ class Map : public TypeBase<TypeKind::kMap> {
   const TypePtr valueType_;
 };
 
+template <typename Visitable>
 class ParameterizedTypeBase : public ParameterizedType {
  public:
   explicit ParameterizedTypeBase(bool nullable = false)
       : ParameterizedType(nullable) {}
+
+  void accept(TypeVisitor& visitor) override;
 };
 
 /// A string literal type can present the 'any1' or 'T','P1'.
-class StringLiteral : public ParameterizedTypeBase {
+class StringLiteral : public ParameterizedTypeBase<StringLiteral> {
  public:
   explicit StringLiteral(std::string value)
       : ParameterizedTypeBase(false), value_(std::move(value)) {}
@@ -431,7 +442,8 @@ class StringLiteral : public ParameterizedTypeBase {
 
 using StringLiteralPtr = std::shared_ptr<const StringLiteral>;
 
-class ParameterizedDecimal : public ParameterizedTypeBase {
+class ParameterizedDecimal
+    : public ParameterizedTypeBase<ParameterizedDecimal> {
  public:
   ParameterizedDecimal(
       StringLiteralPtr precision,
@@ -463,7 +475,8 @@ class ParameterizedDecimal : public ParameterizedTypeBase {
   StringLiteralPtr scale_;
 };
 
-class ParameterizedFixedBinary : public ParameterizedTypeBase {
+class ParameterizedFixedBinary
+    : public ParameterizedTypeBase<ParameterizedFixedBinary> {
  public:
   explicit ParameterizedFixedBinary(
       StringLiteralPtr length,
@@ -487,7 +500,8 @@ class ParameterizedFixedBinary : public ParameterizedTypeBase {
   const StringLiteralPtr length_;
 };
 
-class ParameterizedFixedChar : public ParameterizedTypeBase {
+class ParameterizedFixedChar
+    : public ParameterizedTypeBase<ParameterizedFixedChar> {
  public:
   explicit ParameterizedFixedChar(
       StringLiteralPtr length,
@@ -511,7 +525,8 @@ class ParameterizedFixedChar : public ParameterizedTypeBase {
   const StringLiteralPtr length_;
 };
 
-class ParameterizedVarchar : public ParameterizedTypeBase {
+class ParameterizedVarchar
+    : public ParameterizedTypeBase<ParameterizedVarchar> {
  public:
   explicit ParameterizedVarchar(StringLiteralPtr length, bool nullable = false)
       : ParameterizedTypeBase(nullable), length_(std::move(length)) {}
@@ -533,12 +548,13 @@ class ParameterizedVarchar : public ParameterizedTypeBase {
   const StringLiteralPtr length_;
 };
 
-class ParameterizedList : public ParameterizedTypeBase {
+class ParameterizedList : public ParameterizedTypeBase<ParameterizedList> {
  public:
   explicit ParameterizedList(
       ParameterizedTypePtr elementType,
       bool nullable = false)
-      : ParameterizedTypeBase(nullable), elementType_(std::move(elementType)){};
+      : ParameterizedTypeBase(nullable),
+        elementType_(std::move(elementType)){};
 
   [[nodiscard]] const ParameterizedTypePtr& elementType() const {
     return elementType_;
@@ -557,7 +573,8 @@ class ParameterizedList : public ParameterizedTypeBase {
   const ParameterizedTypePtr elementType_;
 };
 
-class ParameterizedStruct : public ParameterizedTypeBase {
+class ParameterizedStruct
+    : public ParameterizedTypeBase<ParameterizedStruct> {
  public:
   explicit ParameterizedStruct(
       std::vector<ParameterizedTypePtr> types,
@@ -581,7 +598,7 @@ class ParameterizedStruct : public ParameterizedTypeBase {
   const std::vector<ParameterizedTypePtr> children_;
 };
 
-class ParameterizedMap : public ParameterizedTypeBase {
+class ParameterizedMap : public ParameterizedTypeBase<ParameterizedMap> {
  public:
   ParameterizedMap(
       ParameterizedTypePtr keyType,
@@ -612,52 +629,126 @@ class ParameterizedMap : public ParameterizedTypeBase {
   const ParameterizedTypePtr valueType_;
 };
 
-std::shared_ptr<const ScalarType<TypeKind::kBool>> BOOL();
+class Bool : public ScalarType<TypeKind::kBool, Bool> {
+ public:
+  using ScalarType::ScalarType;
+};
 
-std::shared_ptr<const ScalarType<TypeKind::kI8>> TINYINT();
+class TinyInt : public ScalarType<TypeKind::kI8, TinyInt> {
+ public:
+  using ScalarType::ScalarType;
+};
 
-std::shared_ptr<const ScalarType<TypeKind::kI16>> SMALLINT();
+class SmallInt : public ScalarType<TypeKind::kI16, SmallInt> {
+ public:
+  using ScalarType::ScalarType;
+};
 
-std::shared_ptr<const ScalarType<TypeKind::kI32>> INTEGER();
+class Integer : public ScalarType<TypeKind::kI32, Integer> {
+ public:
+  using ScalarType::ScalarType;
+};
 
-std::shared_ptr<const ScalarType<TypeKind::kI64>> BIGINT();
+class BigInt : public ScalarType<TypeKind::kI64, BigInt> {
+ public:
+  using ScalarType::ScalarType;
+};
+class Float : public ScalarType<TypeKind::kFp32, Float> {
+ public:
+  using ScalarType::ScalarType;
+};
+class Double : public ScalarType<TypeKind::kFp64, Double> {
+ public:
+  using ScalarType::ScalarType;
+};
+class String : public ScalarType<TypeKind::kString, String> {
+ public:
+  using ScalarType::ScalarType;
+};
+class Binary : public ScalarType<TypeKind::kBinary, Binary> {
+ public:
+  using ScalarType::ScalarType;
+};
 
-std::shared_ptr<const ScalarType<TypeKind::kFp32>> FLOAT();
+class Timestamp : public ScalarType<TypeKind::kTimestamp, Timestamp> {
+ public:
+  using ScalarType::ScalarType;
+};
+class TimestampTz : public ScalarType<TypeKind::kTimestampTz, TimestampTz> {
+ public:
+  using ScalarType::ScalarType;
+};
+class Date : public ScalarType<TypeKind::kDate, Date> {
+ public:
+  using ScalarType::ScalarType;
+};
+class Time : public ScalarType<TypeKind::kTime, Time> {
+ public:
+  using ScalarType::ScalarType;
+};
+class IntervalYear : public ScalarType<TypeKind::kIntervalYear, IntervalYear> {
+ public:
+  using ScalarType::ScalarType;
+};
+class IntervalDay : public ScalarType<TypeKind::kIntervalDay, IntervalDay> {
+ public:
+  using ScalarType::ScalarType;
+};
+class Uuid : public ScalarType<TypeKind::kUuid, Uuid> {
+ public:
+  using ScalarType::ScalarType;
+};
 
-std::shared_ptr<const ScalarType<TypeKind::kFp64>> DOUBLE();
+std::shared_ptr<const Bool> BOOL(bool nullable = false);
 
-std::shared_ptr<const ScalarType<TypeKind::kString>> STRING();
+std::shared_ptr<const TinyInt> TINYINT(bool nullable = false);
 
-std::shared_ptr<const ScalarType<TypeKind::kBinary>> BINARY();
+std::shared_ptr<const SmallInt> SMALLINT(bool nullable = false);
 
-std::shared_ptr<const ScalarType<TypeKind::kTimestamp>> TIMESTAMP();
+std::shared_ptr<const Integer> INTEGER(bool nullable = false);
 
-std::shared_ptr<const ScalarType<TypeKind::kTimestampTz>> TIMESTAMP_TZ();
+std::shared_ptr<const BigInt> BIGINT(bool nullable = false);
 
-std::shared_ptr<const ScalarType<TypeKind::kDate>> DATE();
+std::shared_ptr<const Float> FLOAT(bool nullable = false);
 
-std::shared_ptr<const ScalarType<TypeKind::kTime>> TIME();
+std::shared_ptr<const Double> DOUBLE(bool nullable = false);
 
-std::shared_ptr<const ScalarType<TypeKind::kIntervalYear>> INTERVAL_YEAR();
+std::shared_ptr<const String> STRING(bool nullable = false);
 
-std::shared_ptr<const ScalarType<TypeKind::kIntervalDay>> INTERVAL_DAY();
+std::shared_ptr<const Binary> BINARY(bool nullable = false);
 
-std::shared_ptr<const ScalarType<TypeKind::kUuid>> UUID();
+std::shared_ptr<const Timestamp> TIMESTAMP(bool nullable = false);
 
-std::shared_ptr<const Decimal> DECIMAL(int precision, int scale);
+std::shared_ptr<const TimestampTz> TIMESTAMP_TZ(bool nullable = false);
 
-std::shared_ptr<const Varchar> VARCHAR(int len);
+std::shared_ptr<const Date> DATE(bool nullable = false);
 
-std::shared_ptr<const FixedChar> FIXED_CHAR(int len);
+std::shared_ptr<const Time> TIME(bool nullable = false);
 
-std::shared_ptr<const FixedBinary> FIXED_BINARY(int len);
+std::shared_ptr<const IntervalYear> INTERVAL_YEAR(bool nullable = false);
 
-std::shared_ptr<const List> LIST(const TypePtr& elementType);
+std::shared_ptr<const IntervalDay> INTERVAL_DAY(bool nullable = false);
 
-std::shared_ptr<const Map> MAP(
-    const TypePtr& keyType,
-    const TypePtr& valueType);
+std::shared_ptr<const Uuid> UUID(bool nullable = false);
 
-std::shared_ptr<const Struct> STRUCT(const std::vector<TypePtr>& children);
+std::shared_ptr<const Decimal>
+DECIMAL(int precision, int scale, bool nullable = false);
+
+std::shared_ptr<const Varchar> VARCHAR(int len, bool nullable = false);
+
+std::shared_ptr<const FixedChar> FIXED_CHAR(int len, bool nullable = false);
+
+std::shared_ptr<const FixedBinary> FIXED_BINARY(int len, bool nullable = false);
+
+std::shared_ptr<const List> LIST(
+    const TypePtr& elementType,
+    bool nullable = false);
+
+std::shared_ptr<const Map>
+MAP(const TypePtr& keyType, const TypePtr& valueType, bool nullable = false);
+
+std::shared_ptr<const Struct> STRUCT(
+    const std::vector<TypePtr>& children,
+    bool nullable = false);
 
 } // namespace io::substrait
