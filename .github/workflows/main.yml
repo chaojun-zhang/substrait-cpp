@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+name: substrait-cpp
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  build-and-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Build
+        working-directory: ${{github.workspace}}
+        run: |
+          make debug
+      - name: Run Unit Tests
+        working-directory: ${{github.workspace}}
+        run: |
+          make test-debug

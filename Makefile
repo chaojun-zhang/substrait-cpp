@@ -29,3 +29,11 @@ debug:
 release:
 	@$(MAKE) build-common BUILD_TYPE=Release
 	@$(MAKE) build BUILD_TYPE=Release
+
+test-cider:
+	@cd build-${BUILD_TYPE}/src/cider/tests && \
+	ctest -j $${CPU_COUNT:-`nproc`} -V
+
+test-debug:
+	@$(MAKE) test-cider BUILD_TYPE=Debug
+	@$(MAKE) test-cider-velox BUILD_TYPE=Debug
