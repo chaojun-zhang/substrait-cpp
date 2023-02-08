@@ -1,38 +1,26 @@
 #!/bin/bash
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
 
 # Minimal setup for Ubuntu 20.04.
 set -eufx -o pipefail
 SCRIPTDIR=$(dirname "${BASH_SOURCE[0]}")
 source $SCRIPTDIR/setup-helper-functions.sh
 
-# Folly must be built with the same compiler flags so that some low level types
-# are the same size.
 CPU_TARGET="${CPU_TARGET:-avx}"
 export COMPILER_FLAGS=$(get_cxx_flags $CPU_TARGET)
-FB_OS_VERSION=v2022.07.11.00
 NPROC=$(getconf _NPROCESSORS_ONLN)
 DEPENDENCY_DIR=${DEPENDENCY_DIR:-$(pwd)}
 
 # Install all dependencies.
 sudo --preserve-env apt install -y \
+  wget \
   g++ \
   cmake \
   ccache \
   ninja-build \
   checkinstall \
   git \
-  libgtest-dev
+  wget
 
 function run_and_time {
   time "$@"
@@ -54,7 +42,6 @@ function prompt {
   ) 2> /dev/null
 }
 
-
 function install_protobuf {
   wget https://github.com/protocolbuffers/protobuf/releases/download/v21.4/protobuf-all-21.4.tar.gz
   tar -xzf protobuf-all-21.4.tar.gz
@@ -69,9 +56,7 @@ function install_deps {
   run_and_time install_protobuf
 }
 
-
 (return 2> /dev/null) && return # If script was sourced, don't run commands.
-
 
 (
   if [[ $# -ne 0 ]]; then
@@ -82,7 +67,5 @@ function install_deps {
     install_deps
   fi
 )
-
-
 
 echo "All deps installed! Now try \"make\""
