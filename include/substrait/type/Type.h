@@ -8,6 +8,8 @@
 #include <utility>
 #include <vector>
 
+#include "substrait/common/NumberUtils.h"
+
 namespace io::substrait {
 
 enum class TypeKind : int8_t {
@@ -398,7 +400,7 @@ class ParameterizedTypeBase : public ParameterizedType {
       : ParameterizedType(nullable) {}
 };
 
-/// A string literal type can present the 'any1'.
+/// A string literal type can present the 'any1' or 'T','P1'.
 class StringLiteral : public ParameterizedTypeBase {
  public:
   explicit StringLiteral(std::string value)
@@ -417,7 +419,7 @@ class StringLiteral : public ParameterizedTypeBase {
   }
 
   [[nodiscard]] bool isWildcard() const override {
-    return value_.find("any") == 0 || value_ == "T";
+    return !common::NumberUtils::is_number(value_);
   }
 
   [[nodiscard]] bool isMatch(
