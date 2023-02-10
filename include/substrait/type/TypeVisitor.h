@@ -4,7 +4,7 @@
 
 #include "substrait/type/Type.h"
 
-namespace substrait {
+namespace io::substrait {
 
 class TypeVisitor {
  public:
@@ -114,4 +114,4 @@ class TypeVisitor {
   }
 };
 
-} // namespace substrait
+} // namespace io::substrait

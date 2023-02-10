@@ -8,7 +8,7 @@
 #include "substrait/function/Function.h"
 #include "substrait/type/Type.h"
 
-namespace substrait {
+namespace io::substrait {
 
 class ExpressionVisitor;
 
@@ -618,4 +618,4 @@ class MultiOrList : public ExpressionBase<MultiOrList> {
   std::vector<std::shared_ptr<MultiOrListRecord>> options_;
 };
 
-} // namespace substrait
+} // namespace io::substrait

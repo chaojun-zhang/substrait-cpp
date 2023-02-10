@@ -46,6 +46,7 @@ template <>
 struct TypeTraits<TypeKind::kBool> {
   static constexpr const char* signature = "bool";
   static constexpr const char* typeString = "boolean";
+  static constexpr const
 };
 
 template <>
@@ -193,12 +194,13 @@ class ParameterizedType {
   /// Deserialize substrait raw type string into Substrait extension  type.
   /// @param rawType - substrait extension raw string type
   static std::shared_ptr<const ParameterizedType> decode(
-      const std::string& rawType){
+      const std::string& rawType) {
     return decode(rawType, true);
   }
 
   static std::shared_ptr<const ParameterizedType> decode(
-      const std::string& rawType,bool isParameterized);
+      const std::string& rawType,
+      bool isParameterized);
 
   [[nodiscard]] const bool& nullable() const {
     return nullable_;
@@ -226,16 +228,16 @@ using ParameterizedTypePtr = std::shared_ptr<const ParameterizedType>;
 
 class Type : public ParameterizedType {
  public:
-  explicit Type(bool nullable = false) : ParameterizedType(nullable) {}
+  using ParameterizedType::ParameterizedType;
 };
 
 using TypePtr = std::shared_ptr<const Type>;
 
 /// Types used in function argument declarations.
-template <TypeKind Kind, typename Visitable>
+template <TypeKind Kind>
 class TypeBase : public Type {
  public:
-  explicit TypeBase(bool nullable = false) : Type(nullable) {}
+  using Type::Type;
 
   [[nodiscard]] std::string signature() const override {
     return TypeTraits<Kind>::signature;
@@ -249,20 +251,12 @@ class TypeBase : public Type {
       const std::shared_ptr<const ParameterizedType>& type) const override {
     return kind() == type->kind() && nullMatch(type);
   }
-
-  void accept(TypeVisitor& v) override;
 };
 
-template <TypeKind Kind, typename Visitable>
-class ScalarType : public TypeBase<Kind, Visitable> {
- public:
-  explicit ScalarType(bool nullable) : TypeBase<Kind, Visitable>(nullable) {}
-};
-
-class Decimal : public TypeBase<TypeKind::kDecimal, Decimal> {
+class Decimal : public TypeBase<TypeKind::kDecimal> {
  public:
   Decimal(int precision, int scale, bool nullable = false)
-      : TypeBase<TypeKind::kDecimal, Decimal>(nullable),
+      : TypeBase<TypeKind::kDecimal>(nullable),
         precision_(precision),
         scale_(scale) {}
 
@@ -279,16 +273,17 @@ class Decimal : public TypeBase<TypeKind::kDecimal, Decimal> {
   [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
+  void accept(TypeVisitor& visitor) override;
+
  private:
   const int precision_;
   const int scale_;
 };
 
-class FixedBinary : public TypeBase<TypeKind::kFixedBinary, FixedBinary> {
+class FixedBinary : public TypeBase<TypeKind::kFixedBinary> {
  public:
   explicit FixedBinary(int length, bool nullable = false)
-      : TypeBase<TypeKind::kFixedBinary, FixedBinary>(nullable),
-        length_(length) {}
+      : TypeBase<TypeKind::kFixedBinary>(nullable), length_(length) {}
 
   [[nodiscard]] const int& length() const {
     return length_;
@@ -299,14 +294,16 @@ class FixedBinary : public TypeBase<TypeKind::kFixedBinary, FixedBinary> {
   [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
+  void accept(TypeVisitor& visitor) override;
+
  private:
   const int length_;
 };
 
-class FixedChar : public TypeBase<TypeKind::kFixedChar, FixedChar> {
+class FixedChar : public TypeBase<TypeKind::kFixedChar> {
  public:
   explicit FixedChar(int length, bool nullable = false)
-      : TypeBase<TypeKind::kFixedChar, FixedChar>(nullable), length_(length){};
+      : TypeBase<TypeKind::kFixedChar>(nullable), length_(length){};
 
   [[nodiscard]] const int& length() const {
     return length_;
@@ -317,14 +314,16 @@ class FixedChar : public TypeBase<TypeKind::kFixedChar, FixedChar> {
   [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
+  void accept(TypeVisitor& visitor) override;
+
  private:
   const int length_;
 };
 
-class Varchar : public TypeBase<TypeKind::kVarchar, Varchar> {
+class Varchar : public TypeBase<TypeKind::kVarchar> {
  public:
   explicit Varchar(int length, bool nullable = false)
-      : TypeBase<TypeKind::kVarchar, Varchar>(nullable), length_(length){};
+      : TypeBase<TypeKind::kVarchar>(nullable), length_(length){};
 
   [[nodiscard]] const int& length() const {
     return length_;
@@ -335,14 +334,16 @@ class Varchar : public TypeBase<TypeKind::kVarchar, Varchar> {
   [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
+  void accept(TypeVisitor& visitor) override;
+
  private:
   const int length_;
 };
 
-class List : public TypeBase<TypeKind::kList, List> {
+class List : public TypeBase<TypeKind::kList> {
  public:
   explicit List(TypePtr elementType, bool nullable = false)
-      : TypeBase<TypeKind::kList, List>(nullable),
+      : TypeBase<TypeKind::kList>(nullable),
         elementType_(std::move(elementType)){};
 
   [[nodiscard]] const TypePtr& elementType() const {
@@ -354,15 +355,16 @@ class List : public TypeBase<TypeKind::kList, List> {
   [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
+  void accept(TypeVisitor& visitor) override;
+
  private:
   const TypePtr elementType_;
 };
 
-class Struct : public TypeBase<TypeKind::kStruct, Struct> {
+class Struct : public TypeBase<TypeKind::kStruct> {
  public:
   explicit Struct(std::vector<TypePtr> types, bool nullable = false)
-      : TypeBase<TypeKind::kStruct, Struct>(nullable),
-        children_(std::move(types)) {}
+      : TypeBase<TypeKind::kStruct>(nullable), children_(std::move(types)) {}
 
   [[nodiscard]] std::string signature() const override;
 
@@ -373,14 +375,16 @@ class Struct : public TypeBase<TypeKind::kStruct, Struct> {
   [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
+  void accept(TypeVisitor& visitor) override;
+
  private:
   const std::vector<TypePtr> children_;
 };
 
-class Map : public TypeBase<TypeKind::kMap, Map> {
+class Map : public TypeBase<TypeKind::kMap> {
  public:
   Map(TypePtr keyType, TypePtr valueType, bool nullable = false)
-      : TypeBase<TypeKind::kMap, Map>(nullable),
+      : TypeBase<TypeKind::kMap>(nullable),
         keyType_(std::move(keyType)),
         valueType_(std::move(valueType)) {}
 
@@ -397,22 +401,25 @@ class Map : public TypeBase<TypeKind::kMap, Map> {
   [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
+  void accept(TypeVisitor& visitor) override;
+
  private:
   const TypePtr keyType_;
   const TypePtr valueType_;
 };
 
-template <typename Visitable>
+template <TypeKind Kind>
 class ParameterizedTypeBase : public ParameterizedType {
  public:
-  explicit ParameterizedTypeBase(bool nullable = false)
-      : ParameterizedType(nullable) {}
+  using ParameterizedType::ParameterizedType;
 
-  void accept(TypeVisitor& visitor) override;
+  [[nodiscard]] TypeKind kind() const override {
+    return Kind;
+  }
 };
 
 /// A string literal type can present the 'any1' or 'T','P1'.
-class StringLiteral : public ParameterizedTypeBase<StringLiteral> {
+class StringLiteral : public ParameterizedTypeBase<TypeKind::KIND_NOT_SET> {
  public:
   explicit StringLiteral(std::string value)
       : ParameterizedTypeBase(false), value_(std::move(value)) {}
@@ -436,14 +443,15 @@ class StringLiteral : public ParameterizedTypeBase<StringLiteral> {
   [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
+  void accept(TypeVisitor& visitor) override;
+
  private:
   const std::string value_;
 };
 
 using StringLiteralPtr = std::shared_ptr<const StringLiteral>;
 
-class ParameterizedDecimal
-    : public ParameterizedTypeBase<ParameterizedDecimal> {
+class ParameterizedDecimal : public ParameterizedTypeBase<TypeKind::kDecimal> {
  public:
   ParameterizedDecimal(
       StringLiteralPtr precision,
@@ -459,10 +467,6 @@ class ParameterizedDecimal
     return precision_;
   }
 
-  [[nodiscard]] TypeKind kind() const override {
-    return TypeKind::kDecimal;
-  }
-
   [[nodiscard]] const StringLiteralPtr& scale() const {
     return scale_;
   }
@@ -470,13 +474,15 @@ class ParameterizedDecimal
   [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
+  void accept(TypeVisitor& visitor) override;
+
  private:
   StringLiteralPtr precision_;
   StringLiteralPtr scale_;
 };
 
 class ParameterizedFixedBinary
-    : public ParameterizedTypeBase<ParameterizedFixedBinary> {
+    : public ParameterizedTypeBase<TypeKind::kFixedBinary> {
  public:
   explicit ParameterizedFixedBinary(
       StringLiteralPtr length,
@@ -487,21 +493,19 @@ class ParameterizedFixedBinary
     return length_;
   }
 
-  [[nodiscard]] TypeKind kind() const override {
-    return TypeKind::kFixedBinary;
-  }
-
   [[nodiscard]] std::string signature() const override;
 
   [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
+
+  void accept(TypeVisitor& visitor) override;
 
  private:
   const StringLiteralPtr length_;
 };
 
 class ParameterizedFixedChar
-    : public ParameterizedTypeBase<ParameterizedFixedChar> {
+    : public ParameterizedTypeBase<TypeKind::kFixedChar> {
  public:
   explicit ParameterizedFixedChar(
       StringLiteralPtr length,
@@ -512,21 +516,18 @@ class ParameterizedFixedChar
     return length_;
   }
 
-  [[nodiscard]] TypeKind kind() const override {
-    return TypeKind::kFixedChar;
-  }
-
   [[nodiscard]] std::string signature() const override;
 
   [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
+  void accept(TypeVisitor& visitor) override;
+
  private:
   const StringLiteralPtr length_;
 };
 
-class ParameterizedVarchar
-    : public ParameterizedTypeBase<ParameterizedVarchar> {
+class ParameterizedVarchar : public ParameterizedTypeBase<TypeKind::kVarchar> {
  public:
   explicit ParameterizedVarchar(StringLiteralPtr length, bool nullable = false)
       : ParameterizedTypeBase(nullable), length_(std::move(length)) {}
@@ -535,33 +536,26 @@ class ParameterizedVarchar
     return length_;
   }
 
-  [[nodiscard]] TypeKind kind() const override {
-    return TypeKind::kVarchar;
-  }
-
   [[nodiscard]] std::string signature() const override;
 
   [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
+
+  void accept(TypeVisitor& visitor) override;
 
  private:
   const StringLiteralPtr length_;
 };
 
-class ParameterizedList : public ParameterizedTypeBase<ParameterizedList> {
+class ParameterizedList : public ParameterizedTypeBase<TypeKind::kList> {
  public:
   explicit ParameterizedList(
       ParameterizedTypePtr elementType,
       bool nullable = false)
-      : ParameterizedTypeBase(nullable),
-        elementType_(std::move(elementType)){};
+      : ParameterizedTypeBase(nullable), elementType_(std::move(elementType)){};
 
   [[nodiscard]] const ParameterizedTypePtr& elementType() const {
     return elementType_;
-  }
-
-  [[nodiscard]] TypeKind kind() const override {
-    return TypeKind::kList;
   }
 
   [[nodiscard]] std::string signature() const override;
@@ -569,12 +563,13 @@ class ParameterizedList : public ParameterizedTypeBase<ParameterizedList> {
   [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
+  void accept(TypeVisitor& visitor) override;
+
  private:
   const ParameterizedTypePtr elementType_;
 };
 
-class ParameterizedStruct
-    : public ParameterizedTypeBase<ParameterizedStruct> {
+class ParameterizedStruct : public ParameterizedTypeBase<TypeKind::kStruct> {
  public:
   explicit ParameterizedStruct(
       std::vector<ParameterizedTypePtr> types,
@@ -587,18 +582,16 @@ class ParameterizedStruct
     return children_;
   }
 
-  [[nodiscard]] TypeKind kind() const override {
-    return TypeKind::kStruct;
-  }
-
   [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
+
+  void accept(TypeVisitor& visitor) override;
 
  private:
   const std::vector<ParameterizedTypePtr> children_;
 };
 
-class ParameterizedMap : public ParameterizedTypeBase<ParameterizedMap> {
+class ParameterizedMap : public ParameterizedTypeBase<TypeKind::kMap> {
  public:
   ParameterizedMap(
       ParameterizedTypePtr keyType,
@@ -612,9 +605,6 @@ class ParameterizedMap : public ParameterizedTypeBase<ParameterizedMap> {
     return keyType_;
   }
 
-  [[nodiscard]] TypeKind kind() const override {
-    return TypeKind::kMap;
-  }
   [[nodiscard]] const ParameterizedTypePtr& valueType() const {
     return valueType_;
   }
@@ -624,79 +614,76 @@ class ParameterizedMap : public ParameterizedTypeBase<ParameterizedMap> {
   [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
+  void accept(TypeVisitor& visitor) override;
+
  private:
   const ParameterizedTypePtr keyType_;
   const ParameterizedTypePtr valueType_;
 };
 
-class Bool : public ScalarType<TypeKind::kBool, Bool> {
+class Bool : public TypeBase<TypeKind::kBool> {
  public:
-  using ScalarType::ScalarType;
+  void accept(TypeVisitor& visitor) override;
 };
-
-class TinyInt : public ScalarType<TypeKind::kI8, TinyInt> {
+class TinyInt : public TypeBase<TypeKind::kI8> {
  public:
-  using ScalarType::ScalarType;
+  void accept(TypeVisitor& visitor) override;
 };
-
-class SmallInt : public ScalarType<TypeKind::kI16, SmallInt> {
+class SmallInt : public TypeBase<TypeKind::kI16> {
  public:
-  using ScalarType::ScalarType;
+  void accept(TypeVisitor& visitor) override;
 };
-
-class Integer : public ScalarType<TypeKind::kI32, Integer> {
+class Integer : public TypeBase<TypeKind::kI32> {
  public:
-  using ScalarType::ScalarType;
+  void accept(TypeVisitor& visitor) override;
 };
-
-class BigInt : public ScalarType<TypeKind::kI64, BigInt> {
+class BigInt : public TypeBase<TypeKind::kI64> {
  public:
-  using ScalarType::ScalarType;
+  void accept(TypeVisitor& visitor) override;
 };
-class Float : public ScalarType<TypeKind::kFp32, Float> {
+class Float : public TypeBase<TypeKind::kFp32> {
  public:
-  using ScalarType::ScalarType;
+  void accept(TypeVisitor& visitor) override;
 };
-class Double : public ScalarType<TypeKind::kFp64, Double> {
+class Double : public TypeBase<TypeKind::kFp64> {
  public:
-  using ScalarType::ScalarType;
+  void accept(TypeVisitor& visitor) override;
 };
-class String : public ScalarType<TypeKind::kString, String> {
+class String : public TypeBase<TypeKind::kString> {
  public:
-  using ScalarType::ScalarType;
+  void accept(TypeVisitor& visitor) override;
 };
-class Binary : public ScalarType<TypeKind::kBinary, Binary> {
+class Binary : public TypeBase<TypeKind::kBinary> {
  public:
-  using ScalarType::ScalarType;
+  void accept(TypeVisitor& visitor) override;
 };
-
-class Timestamp : public ScalarType<TypeKind::kTimestamp, Timestamp> {
+class Timestamp : public TypeBase<TypeKind::kTimestamp> {
  public:
-  using ScalarType::ScalarType;
+  void accept(TypeVisitor& visitor) override;
 };
-class TimestampTz : public ScalarType<TypeKind::kTimestampTz, TimestampTz> {
+class TimestampTz : public TypeBase<TypeKind::kTimestampTz> {
  public:
-  using ScalarType::ScalarType;
+  void accept(TypeVisitor& visitor) override;
 };
-class Date : public ScalarType<TypeKind::kDate, Date> {
+class Date : public TypeBase<TypeKind::kDate> {
  public:
-  using ScalarType::ScalarType;
+  void accept(TypeVisitor& visitor) override;
 };
-class Time : public ScalarType<TypeKind::kTime, Time> {
+class Time : public TypeBase<TypeKind::kTime> {
  public:
-  using ScalarType::ScalarType;
+  void accept(TypeVisitor& visitor) override;
 };
-class IntervalYear : public ScalarType<TypeKind::kIntervalYear, IntervalYear> {
+class IntervalYear : public TypeBase<TypeKind::kIntervalYear> {
  public:
-  using ScalarType::ScalarType;
+  void accept(TypeVisitor& visitor) override;
 };
-class IntervalDay : public ScalarType<TypeKind::kIntervalDay, IntervalDay> {
+class IntervalDay : public TypeBase<TypeKind::kIntervalDay> {
  public:
-  using ScalarType::ScalarType;
+  void accept(TypeVisitor& visitor) override;
 };
-class Uuid : public ScalarType<TypeKind::kUuid, Uuid> {
+class Uuid : public TypeBase<TypeKind::kUuid> {
  public:
-  using ScalarType::ScalarType;
+  void accept(TypeVisitor& visitor) override;
 };
 
 std::shared_ptr<const Bool> BOOL(bool nullable = false);

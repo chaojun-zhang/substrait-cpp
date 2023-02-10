@@ -6,7 +6,7 @@
 #include "substrait/common/Visitor.h"
 #include "substrait/expression/Expression.h"
 
-namespace substrait {
+namespace io::substrait {
 
 class ExpressionVisitor {
  public:
@@ -128,4 +128,5 @@ class ExpressionVisitor {
     visitFallback(expr);
   }
 };
-} // namespace substrait
+
+} // namespace io::substrait

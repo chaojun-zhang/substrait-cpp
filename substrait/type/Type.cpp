@@ -646,4 +646,5 @@ void ParameterizedTypeBase<Visitable>::accept(TypeVisitor& v) {
   v.visit(static_cast<const Visitable&>(*this));
 }
 
+void Bool::accept(TypeVisitor& visitor) {}
 } // namespace io::substrait
