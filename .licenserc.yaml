@@ -1,0 +1,22 @@
+header:
+  license:
+    spdx-id: Apache-2.0
+    content: |
+      SPDX-License-Identifier: Apache-2.0
+
+  paths-ignore:
+    - '.github'
+    - '.gitignore'
+    - '.gitmodules'
+    - '.clang-format'
+    - '.clang-tidy'
+    - '.licenserc.yaml'
+    - 'third_party/fmt'
+    - 'third_party/googletest'
+    - 'third_party/substrait'
+    - 'third_party/yaml-cpp'
+    - '**/*.md'
+    - '**/*.json'
+    - '**/*.log'
+
+  comment: never
